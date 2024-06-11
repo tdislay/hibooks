@@ -1,0 +1,11 @@
+{
+  "extends": ["../.eslintrc.json", "next/core-web-vitals"],
+  "overrides": [
+    {
+      "files": ["*.tsx"],
+      "rules": {
+        "@typescript-eslint/explicit-function-return-type": "off"
+      }
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "name": "hibooks",
+  "version": "0.1.0",
+  "author": "Théo Dislay",
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "packageManager": "npm@10.8.1",
+  "scripts": {
+    "dev": "FORCE_COLOR=1 turbo run dev",
+    "format": "FORCE_COLOR=1 turbo run format",
+    "lint": "FORCE_COLOR=1 turbo run lint"
+  },
+  "license": "ISC",
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^7.13.0",
+    "@typescript-eslint/parser": "^7.13.0",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-import-resolver-typescript": "^3.6.1",
+    "eslint-plugin-import": "^2.29.1",
+    "eslint-plugin-prettier": "^5.1.3",
+    "turbo": "^2.0.3"
+  }
+}
