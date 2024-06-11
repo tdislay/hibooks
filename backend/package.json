@@ -1,11 +1,10 @@
 {
   "name": "backend",
   "version": "0.1.0",
-  "description": "",
   "author": "Théo Dislay",
   "private": true,
   "scripts": {
-    "dev": "npm run start:dev",
+    "dev": "docker compose up",
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
