@@ -9,6 +9,7 @@
   "packageManager": "npm@10.8.1",
   "scripts": {
     "dev": "FORCE_COLOR=1 turbo run dev",
+    "test": "FORCE_COLOR=1 turbo run test",
     "format": "FORCE_COLOR=1 turbo run format",
     "lint": "FORCE_COLOR=1 turbo run lint"
   },
