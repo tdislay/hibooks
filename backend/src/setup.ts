@@ -6,7 +6,7 @@ import { Configuration } from "./config";
 
 export function setupApp<A>(app: INestApplication<A>): void {
   const configService = app.get(ConfigService<Configuration, true>);
-  const cookieSecret = configService.get("application.cookieSecret", {
+  const cookieSecret = configService.get("application.hs256Secret", {
     infer: true,
   });
 
