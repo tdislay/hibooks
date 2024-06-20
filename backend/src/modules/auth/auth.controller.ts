@@ -7,6 +7,7 @@ import {
   Post,
   Req,
   Res,
+  UseGuards,
   UsePipes,
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
@@ -14,6 +15,8 @@ import { CookieOptions, Request, Response } from "express";
 import { z } from "zod";
 import { UserPasswordOmitted } from "../users/users.service";
 import { AuthService } from "./auth.service";
+import { AuthenticatedGuard } from "./guards/Authenticated";
+import { UnauthenticatedGuard } from "./guards/Unauthenticated";
 import { Configuration } from "src/config";
 import { ZodValidationPipe } from "src/infra/zod";
 
@@ -43,6 +46,7 @@ export class AuthController {
    * Local authentification
    */
   @Post("login")
+  @UseGuards(UnauthenticatedGuard)
   @UsePipes(new ZodValidationPipe(loginSchema))
   @HttpCode(200)
   async login(
@@ -67,6 +71,7 @@ export class AuthController {
   }
 
   @Post("logout")
+  @UseGuards(AuthenticatedGuard)
   @HttpCode(200)
   async logout(
     @Req() request: Request,
