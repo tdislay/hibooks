@@ -21,6 +21,7 @@ describe("UserService", () => {
       id: 1,
       username: "alice",
       email: "alice@gmail.com",
+      verified: true,
     });
   });
 
@@ -32,6 +33,7 @@ describe("UserService", () => {
       username: "bob",
       email: "bob@outlook.com",
       password: "$2y$10$TPb1qYziiIcGLfHqNMQ9mepz9s5sckqrshSRtEJ91n0OK0oGE03ry",
+      verified: true,
     });
   });
 });

@@ -3,6 +3,11 @@ import { User } from "@prisma/client";
 import { PrismaService } from "src/infra/prisma";
 
 export type UserPasswordOmitted = Omit<User, "password">;
+export interface CreateUserDto {
+  email: string;
+  username: string;
+  password: string;
+}
 
 const excludePasswordField: {
   [key in keyof UserPasswordOmitted]: true;
@@ -10,6 +15,7 @@ const excludePasswordField: {
   id: true,
   username: true,
   email: true,
+  verified: true,
   password: false,
 };
 
@@ -43,5 +49,16 @@ export class UsersService {
         password: includePassword,
       },
     });
+  }
+
+  async create(userDto: CreateUserDto): Promise<UserPasswordOmitted> {
+    return this.prisma.user.create({
+      data: { ...userDto },
+      select: excludePasswordField,
+    });
+  }
+
+  async verifyUserAccount(id: number): Promise<void> {
+    await this.prisma.user.update({ where: { id }, data: { verified: true } });
   }
 }

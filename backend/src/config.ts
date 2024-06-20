@@ -20,6 +20,8 @@ export function validateEnvironment(
       REDIS_PASSWORD: z.string().min(8),
       FRONTEND_URL: z.string().url(),
       HS256_SECRET: z.string().min(32),
+      EMAIL_SES_ACCESS_KEY: z.string(),
+      EMAIL_SES_SECRET_KEY: z.string(),
     })
     .parse(env);
 }
@@ -49,6 +51,10 @@ export const configuration = () =>
         signed: true,
       } satisfies CookieOptions,
       cookieName: process.env.SESSION_COOKIE_NAME ?? "session",
+    },
+    email: {
+      accessKeyId: process.env.EMAIL_SES_ACCESS_KEY,
+      secretAccessKey: process.env.EMAIL_SES_SECRET_KEY,
     },
   }) as const;
 

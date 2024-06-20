@@ -1,14 +1,20 @@
-import { randomBytes } from "crypto";
 import { Injectable } from "@nestjs/common";
 import { compare } from "bcryptjs";
-import { UserPasswordOmitted, UsersService } from "../users/users.service";
-import { SessionService } from "src/infra/session/session.service";
+import { SessionService } from "../session/session.service";
+import {
+  CreateUserDto,
+  UserPasswordOmitted,
+  UsersService,
+} from "../users/users.service";
+import { EmailVerificationService } from "./emailVerification.service";
+import { secureIdGenerator } from "./utils";
 
 @Injectable()
 export class AuthService {
   constructor(
     private usersService: UsersService,
-    private sessionService: SessionService
+    private sessionService: SessionService,
+    private emailVerificationService: EmailVerificationService,
   ) {}
 
   async login(
@@ -31,7 +37,7 @@ export class AuthService {
     }
 
     delete (user as { password?: string }).password;
-    const sessionToken = this.idGenerator();
+    const sessionToken = secureIdGenerator();
     await this.sessionService.set(sessionToken, user);
 
     return {
@@ -44,11 +50,33 @@ export class AuthService {
     await this.sessionService.destroy(sessionId);
   }
 
-  /**
-   * 24 bytes / 192 bits of entropy encoded in base64 (256 bits string / 32 characters)
-   * Use base64url for url safety
-   */
-  private idGenerator(): string {
-    return randomBytes(24).toString("base64url");
+  async signIn(
+    userDto: CreateUserDto,
+  ): Promise<{ user: UserPasswordOmitted; sessionToken: string }> {
+    const user = await this.usersService.create(userDto);
+
+    await this.emailVerificationService.sendVerificationEmail(user);
+
+    const sessionToken = secureIdGenerator();
+    await this.sessionService.set(sessionToken, user);
+
+    return { user, sessionToken };
+  }
+
+  async verifyUserAccount(
+    userId: number,
+    oneTimePassword: string,
+  ): Promise<boolean> {
+    const retrievedUserId =
+      await this.emailVerificationService.getUserIdFromOneTimePassword(
+        oneTimePassword,
+      );
+
+    if (userId !== retrievedUserId) {
+      return false;
+    }
+
+    await this.usersService.verifyUserAccount(userId);
+    return true;
   }
 }
