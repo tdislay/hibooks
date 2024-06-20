@@ -19,7 +19,7 @@ export class AuthService {
 
   async login(
     username: string,
-    password: string
+    password: string,
   ): Promise<{
     user: UserPasswordOmitted | null;
     sessionToken: string | null;

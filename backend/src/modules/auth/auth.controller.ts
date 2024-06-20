@@ -50,7 +50,7 @@ export class AuthController {
 
   constructor(
     private authService: AuthService,
-    configService: ConfigService<Configuration, true>
+    configService: ConfigService<Configuration, true>,
   ) {
     this.sessionCookieName = configService.get("session.cookieName", {
       infer: true,
@@ -67,11 +67,11 @@ export class AuthController {
   @HttpCode(200)
   async login(
     @Body() credentials: LoginDto,
-    @Res({ passthrough: true }) response: Response
+    @Res({ passthrough: true }) response: Response,
   ): Promise<UserPasswordOmitted> {
     const { user, sessionToken } = await this.authService.login(
       credentials.username,
-      credentials.password
+      credentials.password,
     );
 
     if (user === null) {
@@ -91,7 +91,7 @@ export class AuthController {
   @HttpCode(200)
   async logout(
     @Req() request: Request,
-    @Res({ passthrough: true }) response: Response
+    @Res({ passthrough: true }) response: Response,
   ): Promise<void> {
     const sessionId = request.signedCookies[this.sessionCookieName] as string;
     await this.authService.logout(sessionId);
@@ -104,7 +104,7 @@ export class AuthController {
   @UsePipes(new ZodValidationPipe(signInSchema))
   async signIn(
     @Body() signInDto: SignInDto,
-    @Res({ passthrough: true }) response: Response
+    @Res({ passthrough: true }) response: Response,
   ): Promise<UserPasswordOmitted> {
     try {
       const { user, sessionToken } = await this.authService.signIn(signInDto);
@@ -132,12 +132,12 @@ export class AuthController {
   @HttpCode(200)
   async verifyAccount(
     @Body() body: VerifyAccountDto,
-    @Req() request: Request
+    @Req() request: Request,
   ): Promise<void> {
     const userId = (request.session as UserPasswordOmitted).id;
     const hasBeenVerified = await this.authService.verifyUserAccount(
       userId,
-      body.otp
+      body.otp,
     );
 
     if (!hasBeenVerified) {

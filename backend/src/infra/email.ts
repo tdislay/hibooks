@@ -35,7 +35,7 @@ export class EmailService {
   async sendEmail(
     to: string,
     subject: string,
-    content: EmailContent
+    content: EmailContent,
   ): Promise<void> {
     await this.transporter.sendMail({
       from: "no-reply@hibooks.xyz",

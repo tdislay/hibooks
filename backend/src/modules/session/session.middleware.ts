@@ -10,7 +10,7 @@ export class SessionMiddleware implements NestMiddleware {
 
   constructor(
     private sessionService: SessionService,
-    configService: ConfigService<Configuration, true>
+    configService: ConfigService<Configuration, true>,
   ) {
     this.sessionCookieName = configService.get("session.cookieName", {
       infer: true,
@@ -20,7 +20,7 @@ export class SessionMiddleware implements NestMiddleware {
   async use(
     request: Request,
     response: Response,
-    next: NextFunction
+    next: NextFunction,
   ): Promise<void> {
     request.session = null;
     const sessionId: string | undefined =

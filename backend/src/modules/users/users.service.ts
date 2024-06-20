@@ -36,11 +36,11 @@ export class UsersService {
    */
   async getByUsername(
     username: string,
-    includePassword: true
+    includePassword: true,
   ): Promise<User | null>;
   async getByUsername(
     username: string,
-    includePassword: boolean = false
+    includePassword: boolean = false,
   ): Promise<UserPasswordOmitted | User | null> {
     return this.prisma.user.findUnique({
       where: { username },

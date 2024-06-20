@@ -18,7 +18,7 @@ export function signHS256(content: string, secret: string): string {
 
 export function isSignedTokenValid(
   signedToken: string,
-  secret: string
+  secret: string,
 ): boolean {
   const [content] = signedToken.split(".");
   const expectedSignedToken = signHS256(content, secret);

@@ -6,7 +6,7 @@ import { z } from "zod";
 const DEFAULT_SESSION_EXPIRATION = 60 * 60 * 24 * 30; // 30 days
 
 export function validateEnvironment(
-  env: Record<string, unknown>
+  env: Record<string, unknown>,
 ): Record<string, unknown> {
   return z
     .object({

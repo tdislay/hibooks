@@ -17,7 +17,7 @@ export class EmailVerificationService {
   constructor(
     private emailService: EmailService,
     private redisService: RedisService,
-    private configService: ConfigService<Configuration, true>
+    private configService: ConfigService<Configuration, true>,
   ) {
     this.hs256Secret = this.configService.get("application.hs256Secret", {
       infer: true,
@@ -37,32 +37,32 @@ export class EmailVerificationService {
       `${emailVerificationRedisPrefix}:${OneTimePasswordId}`,
       user.id,
       "EX",
-      OTP_EXPIRATION_IN_SEC
+      OTP_EXPIRATION_IN_SEC,
     );
 
     const signedOTP = signHS256(OneTimePasswordId, this.hs256Secret);
     const verifyAccountLink = new URL(
       `/verify-account?otp=${signedOTP}`,
-      frontendUrl
+      frontendUrl,
     );
 
     const emailContent = this.generateVerifyEmailContent(
       user.username,
-      verifyAccountLink
+      verifyAccountLink,
     );
     await this.emailService.sendEmail(
       user.email,
       "Verify your account",
-      emailContent
+      emailContent,
     );
   }
 
   async getUserIdFromOneTimePassword(
-    signedOneTimePassword: string
+    signedOneTimePassword: string,
   ): Promise<number | null> {
     const tokenValid = isSignedTokenValid(
       signedOneTimePassword,
-      this.hs256Secret
+      this.hs256Secret,
     );
     if (!tokenValid) {
       return null;
@@ -70,7 +70,7 @@ export class EmailVerificationService {
 
     const [oneTimePassword] = signedOneTimePassword.split(".");
     const userId = await this.redisService.get(
-      `${emailVerificationRedisPrefix}:${oneTimePassword}`
+      `${emailVerificationRedisPrefix}:${oneTimePassword}`,
     );
 
     // Avoiding `Number(null) = 0`
@@ -79,14 +79,14 @@ export class EmailVerificationService {
     }
 
     await this.redisService.del(
-      `${emailVerificationRedisPrefix}:${oneTimePassword}`
+      `${emailVerificationRedisPrefix}:${oneTimePassword}`,
     );
     return Number(userId);
   }
 
   private generateVerifyEmailContent(
     username: string,
-    verifyAccountLink: URL | string
+    verifyAccountLink: URL | string,
   ): EmailContent {
     return {
       html: `<p>Hi ${username} ! Welcome on our platform !</p>

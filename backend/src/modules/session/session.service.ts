@@ -11,7 +11,7 @@ export class SessionService {
 
   constructor(
     private redisService: RedisService,
-    configService: ConfigService<Configuration, true>
+    configService: ConfigService<Configuration, true>,
   ) {
     const sessionConfig = configService.get("session", { infer: true });
 
@@ -24,13 +24,13 @@ export class SessionService {
       `${this.sessionPrefix}:${sessionId}`,
       JSON.stringify(session),
       "EX",
-      this.sessionExpirationInSeconds
+      this.sessionExpirationInSeconds,
     );
   }
 
   async get(key: string): Promise<SessionContent | null> {
     const stringSessionContent = await this.redisService.get(
-      `${this.sessionPrefix}:${key}`
+      `${this.sessionPrefix}:${key}`,
     );
 
     if (stringSessionContent === null) {
