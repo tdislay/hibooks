@@ -9,23 +9,23 @@ declare module "supertest" {
 
 (OriginalTest.prototype as OriginalTest).expectPartial = function expectPartial(
   statusCode: number,
-  body: object
+  body: object,
 ) {
   // @ts-ignore
   this._asserts.push(
     // @ts-ignore
-    wrapAssertFn((res: Response) => this._assertStatus(statusCode, res))
+    wrapAssertFn((res: Response) => this._assertStatus(statusCode, res)),
   );
   // @ts-ignore
   this._asserts.push(
-    wrapAssertFn((res: Response) => expect(res.body).toMatchObject(body))
+    wrapAssertFn((res: Response) => expect(res.body).toMatchObject(body)),
   );
   return this;
 };
 
 // Typescript friendly supertest's wrapAssertFn
 function wrapAssertFn(
-  assertFn: (res: Response) => void | Error
+  assertFn: (res: Response) => void | Error,
 ): (res: Response) => void | Error {
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const savedStack = new Error().stack!.split("\n").slice(3);

@@ -8,7 +8,7 @@ export class EmailStubService extends EmailService {
   async sendEmail(
     recipient: string,
     object: string,
-    content: EmailContent
+    content: EmailContent,
   ): Promise<void> {
     const mails = this.inbox.get(recipient);
     const mail: Mail = { object, content };

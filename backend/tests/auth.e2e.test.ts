@@ -3,15 +3,18 @@ import { ConfigService } from "@nestjs/config";
 import { Test } from "@nestjs/testing";
 import { sign } from "cookie-signature";
 import { Agent, agent as supertestAgent } from "supertest";
-import { UserPasswordOmitted, UsersService } from "../users/users.service";
-import { emailVerificationRedisPrefix } from "./emailVerification.service";
+import { emailVerificationRedisPrefix } from "../src/modules/auth/emailVerification.service";
+import {
+  UserPasswordOmitted,
+  UsersService,
+} from "../src/modules/users/users.service";
 import { AppModule } from "src/app.module";
 import { Configuration } from "src/config";
 import { EmailService } from "src/infra/email";
 import { RedisService } from "src/infra/redis";
 import { setupApp } from "src/setup";
-import { aliceCredentials, authenticate } from "src/tests/authenticate";
-import { EmailStubService } from "src/tests/stubs/EmailStub.service";
+import { aliceCredentials, authenticate } from "tests/authenticate";
+import { EmailStubService } from "tests/stubs/EmailStub.service";
 
 describe("Authentication (e2e)", () => {
   let app: INestApplication;
@@ -117,7 +120,7 @@ describe("Authentication (e2e)", () => {
         .expect(200) // 200 means the user is authenticated as the route use the Authenticated Guard
         .expect(
           "set-cookie",
-          "session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT"
+          "session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT",
         );
     });
   });
@@ -148,7 +151,7 @@ describe("Authentication (e2e)", () => {
         .expect(401)
         .expect(
           "set-cookie",
-          "session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT"
+          "session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT",
         );
     });
   });
@@ -263,7 +266,7 @@ describe("Authentication (e2e)", () => {
     it("should return a 404 not found when otp is not valid", async () => {
       const redisService = app.get(RedisService);
       const initOtpKeys = await redisService.keys(
-        `${emailVerificationRedisPrefix}:*`
+        `${emailVerificationRedisPrefix}:*`,
       );
 
       const response = await agent().post("/auth/sign-in").send({
@@ -275,7 +278,7 @@ describe("Authentication (e2e)", () => {
       const sessionCookie = setCookieHeader?.[0];
 
       const otpKeys = await redisService.keys(
-        `${emailVerificationRedisPrefix}:*`
+        `${emailVerificationRedisPrefix}:*`,
       );
       const otpKey = otpKeys.filter((key) => !initOtpKeys.includes(key))[0];
       const otp = otpKey.split(":")[2];
@@ -309,7 +312,7 @@ describe("Authentication (e2e)", () => {
       const mail = emailService.inbox.get("franklin@gmail.com")?.[0];
       const otp = mail?.content.html?.match(/href=".*?otp=(.*)"/)?.[1];
       const otpShouldBeInRedis = await redisService.get(
-        `${emailVerificationRedisPrefix}:${otp?.split(".")[0]}`
+        `${emailVerificationRedisPrefix}:${otp?.split(".")[0]}`,
       );
 
       expect(otp).toBeDefined();
@@ -328,7 +331,7 @@ describe("Authentication (e2e)", () => {
       });
 
       const otpShouldNotBeInRedis = await redisService.get(
-        `${emailVerificationRedisPrefix}:${otp?.split(".")[0]}`
+        `${emailVerificationRedisPrefix}:${otp?.split(".")[0]}`,
       );
       expect(otpShouldNotBeInRedis).toBeNull();
     });

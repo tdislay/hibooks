@@ -15,7 +15,7 @@ export const aliceCredentials: LoginDto = {
  */
 export async function authenticate(
   agent: TestAgent<Test>,
-  userCredentials: LoginDto
+  userCredentials: LoginDto,
 ): Promise<string> {
   const response = await agent.post("/auth/login").send(userCredentials);
 
