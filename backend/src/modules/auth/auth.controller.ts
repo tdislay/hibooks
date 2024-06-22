@@ -99,7 +99,7 @@ export class AuthController {
     response.clearCookie(this.sessionCookieName);
   }
 
-  @Post("sign-in")
+  @Post("sign-up")
   @UseGuards(UnauthenticatedGuard)
   @UsePipes(new ZodValidationPipe(signInSchema))
   async signIn(

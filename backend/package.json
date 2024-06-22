@@ -67,9 +67,9 @@
       "json",
       "ts"
     ],
-    "rootDir": "src",
+    "rootDir": ".",
     "moduleNameMapper": {
-      "src/(.*)$": "<rootDir>/$1"
+      "src/(.*)$": "<rootDir>/src/$1"
     },
     "setupFilesAfterEnv": [
       "./tests/setup.ts"

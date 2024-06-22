@@ -8,13 +8,13 @@ import {
   UserPasswordOmitted,
   UsersService,
 } from "../src/modules/users/users.service";
+import { aliceCredentials, authenticate } from "./authenticate";
+import { EmailStubService } from "./stubs/EmailStub.service";
 import { AppModule } from "src/app.module";
 import { Configuration } from "src/config";
 import { EmailService } from "src/infra/email";
 import { RedisService } from "src/infra/redis";
 import { setupApp } from "src/setup";
-import { aliceCredentials, authenticate } from "tests/authenticate";
-import { EmailStubService } from "tests/stubs/EmailStub.service";
 
 describe("Authentication (e2e)", () => {
   let app: INestApplication;
@@ -156,16 +156,16 @@ describe("Authentication (e2e)", () => {
     });
   });
 
-  describe("Sign-in", () => {
+  describe("Sign up", () => {
     it("should return a 400 when bad parameters", async () => {
       // No parameters
       await agent()
-        .post("/auth/sign-in")
+        .post("/auth/sign-up")
         .expectPartial(400, { cause: [{}, {}, {}] });
 
       // Wrong parameters
       await agent()
-        .post("/auth/sign-in")
+        .post("/auth/sign-up")
         .send({
           email: "invalidEMAIL",
           username:
@@ -183,7 +183,7 @@ describe("Authentication (e2e)", () => {
 
     it("should return a 409 on non unique username", async () => {
       await agent()
-        .post("/auth/sign-in")
+        .post("/auth/sign-up")
         .send({
           email: "valid@email.com",
           username: "alice",
@@ -192,9 +192,9 @@ describe("Authentication (e2e)", () => {
         .expectPartial(409, { message: '"username" is not unique' });
     });
 
-    it("should successfully sign-in and log-in a new user", async () => {
+    it("should successfully sign-up and log-in a new user", async () => {
       await agent()
-        .post("/auth/sign-in")
+        .post("/auth/sign-up")
         .send({
           email: "myemail@fakedomain.com",
           username: "theo",
@@ -269,7 +269,7 @@ describe("Authentication (e2e)", () => {
         `${emailVerificationRedisPrefix}:*`,
       );
 
-      const response = await agent().post("/auth/sign-in").send({
+      const response = await agent().post("/auth/sign-up").send({
         username: "victim",
         password: "strongPa$$word",
         email: "victim@gmail.com",
@@ -298,7 +298,7 @@ describe("Authentication (e2e)", () => {
       const redisService = app.get(RedisService);
 
       const response = await agent()
-        .post("/auth/sign-in")
+        .post("/auth/sign-up")
         .send({
           username: "franklin",
           password: "strongPa$$word",
