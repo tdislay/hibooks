@@ -14,6 +14,7 @@ import { AppModule } from "src/app.module";
 import { Configuration } from "src/config";
 import { EmailService } from "src/infra/email";
 import { RedisService } from "src/infra/redis";
+import { SessionService } from "src/modules/session/session.service";
 import { setupApp } from "src/setup";
 
 describe("Authentication (e2e)", () => {
@@ -44,14 +45,8 @@ describe("Authentication (e2e)", () => {
         .post("/auth/login")
         .expectPartial(400, {
           cause: [
-            {
-              code: "invalid_type",
-              path: ["username"],
-            },
-            {
-              code: "invalid_type",
-              path: ["password"],
-            },
+            { code: "invalid_type", path: ["username"], received: "undefined" },
+            { code: "invalid_type", path: ["password"], received: "undefined" },
           ],
         });
 
@@ -73,6 +68,7 @@ describe("Authentication (e2e)", () => {
         .send({
           username: "non-existent user",
           password: "password",
+          rememberMe: true,
         })
         .expectPartial(401, { message: "User not found" });
     });
@@ -83,6 +79,7 @@ describe("Authentication (e2e)", () => {
         .send({
           username: "alice",
           password: "totally wrong passord",
+          rememberMe: true,
         })
         .expectPartial(401, { message: "Wrong credentials" });
     });
@@ -91,37 +88,43 @@ describe("Authentication (e2e)", () => {
       const sessionCookie = await authenticate(agent(), aliceCredentials);
 
       await agent()
-        .set("Cookie", sessionCookie)
         .post("/auth/login")
+        .set("Cookie", sessionCookie)
         .send(aliceCredentials)
         .expectPartial(403, { message: "Forbidden" });
     });
 
-    it("should successfuly set a session cookie on right credentials", async () => {
+    it("should successfully login and set a session-lived cookie on right credentials", async () => {
+      const sessionService = app.get(SessionService);
       const response = await agent()
         .post("/auth/login")
         .send(aliceCredentials)
-        .expect(200);
+        .expectPartial<Partial<UserPasswordOmitted>>(200, {
+          id: 1,
+          username: "alice",
+          email: "alice@gmail.com",
+        });
 
       const setCookieHeader = response.headers["set-cookie"] as string | null;
-      const session = setCookieHeader?.[0];
-      expect(session).toBeDefined();
-      expect(session).not.toBeNull();
-      expect(session?.length).not.toBe(0);
-      expect(response.body).toMatchObject<Partial<UserPasswordOmitted>>({
+      const sessionCookie = setCookieHeader?.[0] as string;
+      const session = sessionCookie.match(/(?<=s%3A)\w*/)?.[0] as string;
+      const redisSession = await sessionService.get(session);
+
+      expect(sessionCookie).not.toMatch(/Max-Age/); // Session-lived Cookie
+      expect(redisSession).toMatchObject<Partial<UserPasswordOmitted>>({
+        email: "alice@gmail.com",
         id: 1,
         username: "alice",
-        email: "alice@gmail.com",
+        verified: true,
       });
+    });
 
+    it("should succesfully set a long-lived cookie on right credentials", async () => {
       await agent()
-        .set("Cookie", [session])
-        .post("/auth/logout")
-        .expect(200) // 200 means the user is authenticated as the route use the Authenticated Guard
-        .expect(
-          "set-cookie",
-          "session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT",
-        );
+        .post("/auth/login")
+        .send({ ...aliceCredentials, rememberMe: true })
+        .expect(200)
+        .expect("set-cookie", /Max-Age/);
     });
   });
 
@@ -141,14 +144,27 @@ describe("Authentication (e2e)", () => {
       const signedToken = `s%3A${sign("123456", process.env.HS256_SECRET!)}`;
 
       await agent()
-        .set("Cookie", [`${sessionCookieName}=${unsignedToken}`])
         .post("/auth/logout")
+        .set("Cookie", `${sessionCookieName}=${unsignedToken}`)
         .expect(401);
 
       await agent()
-        .set("Cookie", [`${sessionCookieName}=${signedToken}`])
         .post("/auth/logout")
+        .set("Cookie", `${sessionCookieName}=${signedToken}`)
         .expect(401)
+        .expect(
+          "set-cookie",
+          "session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT",
+        );
+    });
+
+    it("should successfully logout a logged-in user and remove their cookie", async () => {
+      const sessionCookie = await authenticate(agent(), aliceCredentials);
+
+      await agent()
+        .post("/auth/logout")
+        .set("Cookie", sessionCookie)
+        .expect(200)
         .expect(
           "set-cookie",
           "session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT",
@@ -192,7 +208,7 @@ describe("Authentication (e2e)", () => {
         .expectPartial(409, { message: '"username" is not unique' });
     });
 
-    it("should successfully sign-up and log-in a new user", async () => {
+    it("should successfully sign-up a new user and set a long-lived cookie", async () => {
       await agent()
         .post("/auth/sign-up")
         .send({
@@ -205,7 +221,7 @@ describe("Authentication (e2e)", () => {
           username: "theo",
           verified: false,
         })
-        .expect("set-cookie", /session=s%3A.*/);
+        .expect("set-cookie", /session=s%3A.*Max-Age/);
     });
   });
 
@@ -215,38 +231,38 @@ describe("Authentication (e2e)", () => {
 
       // No parameters
       await agent()
-        .set("Cookie", sessionCookie)
         .post("/auth/verify-account")
+        .set("Cookie", sessionCookie)
         .expectPartial(400, { cause: [{}] });
 
       // Malformed otp
       await agent()
-        .set("Cookie", sessionCookie)
         .post("/auth/verify-account")
+        .set("Cookie", sessionCookie)
         .send({ otp: "" })
         .expectPartial(400, { cause: [{ message: "Malformed OTP" }] });
 
       await agent()
-        .set("Cookie", sessionCookie)
         .post("/auth/verify-account")
+        .set("Cookie", sessionCookie)
         .send({ otp: "." })
         .expectPartial(400, { cause: [{ message: "Malformed OTP" }] });
 
       await agent()
-        .set("Cookie", sessionCookie)
         .post("/auth/verify-account")
+        .set("Cookie", sessionCookie)
         .send({ otp: "nodot" })
         .expectPartial(400, { cause: [{ message: "Malformed OTP" }] });
 
       await agent()
-        .set("Cookie", sessionCookie)
         .post("/auth/verify-account")
+        .set("Cookie", sessionCookie)
         .send({ otp: "nosignature." })
         .expectPartial(400, { cause: [{ message: "Malformed OTP" }] });
 
       await agent()
-        .set("Cookie", sessionCookie)
         .post("/auth/verify-account")
+        .set("Cookie", sessionCookie)
         .send({ otp: ".nocontent" })
         .expectPartial(400, { cause: [{ message: "Malformed OTP" }] });
     });
@@ -255,8 +271,8 @@ describe("Authentication (e2e)", () => {
       const sessionCookie = await authenticate(agent(), aliceCredentials);
 
       await agent()
-        .set("Cookie", sessionCookie)
         .post("/auth/verify-account")
+        .set("Cookie", sessionCookie)
         .send({
           otp: "content.signature",
         })
@@ -275,7 +291,7 @@ describe("Authentication (e2e)", () => {
         email: "victim@gmail.com",
       });
       const setCookieHeader = response.headers["set-cookie"] as string | null;
-      const sessionCookie = setCookieHeader?.[0];
+      const sessionCookie = setCookieHeader?.[0] as string;
 
       const otpKeys = await redisService.keys(
         `${emailVerificationRedisPrefix}:*`,
@@ -286,8 +302,8 @@ describe("Authentication (e2e)", () => {
 
       const tamperedOtp = `${otp}.wrong-signature`;
       await agent()
-        .set("Cookie", sessionCookie)
         .post("/auth/verify-account")
+        .set("Cookie", sessionCookie)
         .send({ otp: tamperedOtp })
         .expect(404);
     });
@@ -308,7 +324,7 @@ describe("Authentication (e2e)", () => {
 
       const userId = response.body.id;
       const setCookieHeader = response.headers["set-cookie"] as string | null;
-      const sessionCookie = setCookieHeader?.[0];
+      const sessionCookie = setCookieHeader?.[0] as string;
       const mail = emailService.inbox.get("franklin@gmail.com")?.[0];
       const otp = mail?.content.html?.match(/href=".*?otp=(.*)"/)?.[1];
       const otpShouldBeInRedis = await redisService.get(
@@ -318,8 +334,8 @@ describe("Authentication (e2e)", () => {
       expect(otp).toBeDefined();
       expect(otpShouldBeInRedis).not.toBeNull();
       await agent()
-        .set("Cookie", sessionCookie)
         .post("/auth/verify-account")
+        .set("Cookie", sessionCookie)
         .send({ otp })
         .expect(200);
 

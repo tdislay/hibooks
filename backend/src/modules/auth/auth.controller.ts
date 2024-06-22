@@ -31,6 +31,7 @@ export type VerifyAccountDto = z.infer<typeof verifyAccountSchema>;
 const loginSchema = z.object({
   username: z.string().min(1),
   password: z.string().min(1),
+  rememberMe: z.boolean().default(false).optional(),
 });
 
 const signInSchema = z.object({
@@ -66,12 +67,13 @@ export class AuthController {
   @UsePipes(new ZodValidationPipe(loginSchema))
   @HttpCode(200)
   async login(
-    @Body() credentials: LoginDto,
+    @Body() loginDto: Required<LoginDto>,
     @Res({ passthrough: true }) response: Response,
   ): Promise<UserPasswordOmitted> {
     const { user, sessionToken } = await this.authService.login(
-      credentials.username,
-      credentials.password,
+      loginDto.username,
+      loginDto.password,
+      loginDto.rememberMe,
     );
 
     if (user === null) {
@@ -82,7 +84,10 @@ export class AuthController {
       throw new HttpException("Wrong credentials", HttpStatus.UNAUTHORIZED);
     }
 
-    response.cookie(this.sessionCookieName, sessionToken, this.cookieOptions);
+    response.cookie(this.sessionCookieName, sessionToken, {
+      ...this.cookieOptions,
+      maxAge: loginDto.rememberMe ? this.cookieOptions.maxAge : undefined,
+    });
     return user;
   }
 

@@ -22,9 +22,7 @@ export async function authenticate(
   const setCookieHeader = response.headers["set-cookie"] as string | null;
   const session = setCookieHeader?.[0];
 
-  expect(session).toBeDefined();
-  expect(session).not.toBeNull();
-  expect(session?.length).not.toBe(0);
+  expect(session).toMatch(/session=s%3A.*HttpOnly; Secure; SameSite=Lax/);
 
   return session as string;
 }

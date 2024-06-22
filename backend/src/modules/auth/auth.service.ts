@@ -20,6 +20,7 @@ export class AuthService {
   async login(
     username: string,
     password: string,
+    rememberMe: boolean,
   ): Promise<{
     user: UserPasswordOmitted | null;
     sessionToken: string | null;
@@ -38,7 +39,7 @@ export class AuthService {
 
     delete (user as { password?: string }).password;
     const sessionToken = secureIdGenerator();
-    await this.sessionService.set(sessionToken, user);
+    await this.sessionService.set(sessionToken, user, rememberMe);
 
     return {
       user,
@@ -58,7 +59,7 @@ export class AuthService {
     await this.emailVerificationService.sendVerificationEmail(user);
 
     const sessionToken = secureIdGenerator();
-    await this.sessionService.set(sessionToken, user);
+    await this.sessionService.set(sessionToken, user, true); // Remember the user
 
     return { user, sessionToken };
   }

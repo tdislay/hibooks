@@ -3,7 +3,10 @@ import { Test as OriginalTest } from "supertest";
 
 declare module "supertest" {
   interface Test {
-    expectPartial: (errorCode: number, body: object) => OriginalTest;
+    expectPartial: <T extends object>(
+      errorCode: number,
+      body: T,
+    ) => OriginalTest;
   }
 }
 
