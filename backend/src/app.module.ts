@@ -1,6 +1,6 @@
 import { MiddlewareConsumer, Module, NestModule } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
-import { configuration, validateEnvironment } from "./config";
+import { configuration } from "./config";
 import { PrismaModule } from "./infra/prisma";
 import { RedisModule } from "./infra/redis";
 import { AuthModule } from "./modules/auth/auth.module";
@@ -14,7 +14,6 @@ import { UserModule } from "./modules/users/users.module";
     ConfigModule.forRoot({
       load: [configuration],
       isGlobal: true,
-      validate: validateEnvironment,
     }),
     PrismaModule,
     RedisModule,
