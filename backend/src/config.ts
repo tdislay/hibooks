@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 
+import { CorsOptions } from "@nestjs/common/interfaces/external/cors-options.interface";
 import { CookieOptions } from "express";
 import { z } from "zod";
 
@@ -27,6 +28,10 @@ export function configuration() {
     application: {
       port: env.PORT,
       hs256Secret: env.HS256_SECRET,
+      cors: {
+        credentials: true,
+        origin: env.FRONTEND_URL,
+      } satisfies CorsOptions,
     },
     frontend: {
       url: env.FRONTEND_URL,
