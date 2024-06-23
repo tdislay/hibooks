@@ -32,15 +32,15 @@ export class EmailVerificationService {
   async sendVerificationEmail(user: UserPasswordOmitted): Promise<void> {
     const frontendUrl = this.configService.get("frontend.url", { infer: true });
 
-    const OneTimePasswordId = secureIdGenerator();
+    const oneTimePasswordId = secureIdGenerator();
     await this.redisService.set(
-      `${emailVerificationRedisPrefix}:${OneTimePasswordId}`,
+      `${emailVerificationRedisPrefix}:${oneTimePasswordId}`,
       user.id,
       "EX",
       OTP_EXPIRATION_IN_SEC,
     );
 
-    const signedOTP = signHS256(OneTimePasswordId, this.hs256Secret);
+    const signedOTP = signHS256(oneTimePasswordId, this.hs256Secret);
     const verifyAccountLink = new URL(
       `/verify-account?otp=${signedOTP}`,
       frontendUrl,
