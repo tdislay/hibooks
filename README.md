@@ -2,13 +2,13 @@
 
 <div align="center">
 <img alt="Hibook mascot" src="./hibook.svg" width=126/>
-<p>Hibook is a book web app where you can search for books, give your opinions, receive recommendations and stay up to date with your favorite authors' new releases.</p>
+<p>Hibooks is a books web app where you can search for books, give your opinions, receive recommendations, and stay up to date with your favorite authors' new releases.</p>
 </div>
 
 > [!IMPORTANT]
 > Hibook is just a showcase project. Nothing else.
 >
-> It's under 🚧 active development 🚧, features will be implemented soon !
+> It's under 🚧 active development 🚧, features will be implemented soon!
 
 **Technical Stack**
 
@@ -28,7 +28,7 @@ cd hibooks
 npm install
 cp ./backend/.env.example ./backend/.env
 npx -w backend prisma generate
-npx -w backend prisma push
+npx -w backend prisma db push
 npx -w backend prisma db seed
 npm run dev
 ```
@@ -36,16 +36,20 @@ npm run dev
 ## Features
 
 - [ ] Authentication
-  - [x] Local Authentication
-  - [ ] Google SSO
-- [ ] Users
-  - [ ] Create user
-  - [ ] Email verification using jwt
+  - [x] **Homemade Local Authentication**
+  - [x] Sign up user
+  - [x] Email verification using one time password
+  - [ ] Sign up (check uniqueness with debounce) & login from frontend
+  - [ ] Google **SSO**
 - [ ] CRUD Books
 - [ ] **Real time Notifications (SSE)**
+- [ ] CRUD Users
+  - [ ] Upload profile picture on AWS S3
+  - [ ] GET User (retrieve only non sensitive information)
+  - [ ] Backend password change
 - [ ] CRUD BookOpinions
 - [ ] **Efficient Book Search**
-  - [ ] Elastic Search (data replication)
+  - [ ] Open Search (data replication)
   - [ ] Search endpoint
 - [ ] **Realtime book recommendation using Graph databses**
   - [ ] Neo4J (data replication)
@@ -53,14 +57,16 @@ npm run dev
 
 # Discussion
 
-In this section, I will detail the choices I made, how they are coherent to the context, and what are their limitations.
+In this section, I will detail the technical choices I took. How they are coherent with the context, and what are their limitations.
 
 ## Nest
 
-I decided to use NestJs because it's highly opinionated and follows SOLID principles, which is a must-have in an entreprise context. As javascript is being too permisive, using opionated framework allows to avoid common pitfalls and so helps developers to write consistent and organized code.
-NestJs is especially enforcing a modular monolith architecture (which would help migration towards microservices), which I appreciate, as I strongly believe code should be organized by domain / feature (cohesion) and not by technical aspects.
-Though I consider Nest to be overabusing of Inversion Of Control and being too little permissive.
-I find dependency injection to not very well fit the JS idiomatics, and that DI is better in POO-only context. Moreover, as my approach to tests is feature-centric, I don't find unit tests to be the best value (see [Tests](#tests)), thus, I couldn't use DI at its best.
+NestJs, as a highly opinionated framework which firmly follows SOLID principles, appears to be a great choice in an enterprise context. In fact, JavaScript permissiveness is a double-edged sword. While it brings freedom to developpers, on the other side it can lead to spaghetti-code and unmaintainable projects. That's why using opinonated frameworks allow developpers to avoid common pitfalls by restricting the choices they can take, which helps greatly to write consistent and organized code within a team.
+Also, NestJs enforces a modular monolith architecture, thus strongly helping migration towards microservices if needed later.
+Modular monoliths also encourages code cohesion by organizing by domain / feature and not by technical aspects.
+
+However, I consider Nest to be too restrictive and overuse Inversion Of Control. Which could result in seeing everything _as a nail_.
+While IoC is a great pattern, considering JavaScript idioms, DI seems to better suit OOP-only context. Moreover, as my approach to tests is feature-centric, I don't find unit tests to be the best value (see [Tests](#tests)), thus, I was able to use DI at its best only once. The rest was OOP and DI boilerplate.
 
 ### Express over Fastify
 
@@ -74,7 +80,8 @@ The `@nestjs/config` is sufficient for our needs. But if the app grew in complex
 
 ## Environment
 
-I dockerized my services and my applications for development in the same environment as they would be in production. It's considered a good practice as environment issues (e.g. glibc version) will be catched during development / testing.
+Dockerizing services and applications in development is a good practice as it allows us to use an environment identical to the one in production, independently of the developer's environment (OS, installed libraries or binaries).
+Thus it mitigates some issues by catching them early on during development and testing.
 
 ## Authentication
 
@@ -82,60 +89,120 @@ I dockerized my services and my applications for development in the same environ
 
 A well-known adage is to `never roll your own authentication [implementation]`.
 
-Effectively, security is binary, it is secure or it is not. The pitfalls you have to take into account are tremendous. In any entreprise context, authentication should be built upon proven (talking years even decades) stable and robust libraries.
+Effectively, security is binary: it is secure or it is not. There are many pitfalls you have to be aware in order to avoid all of them. Of course, in any enterprise context, authentication should be built upon proven (talking years even decades) stables and robusts libraries.
 
-However, authentication is quite of an interesting field. Out of curiosity, and for educational purposes, I decided to fully implement my own for a better understanding.
+However, authentication is quite of an interesting field. Out of curiosity, and for educational purposes, I decided to fully implement my own for a better overall understanding.
 
-Nonetheless, those are the different points I took into consideration:
+Nonetheless, I took into consideration different points:
 
-- Using bcrypt, the industry hash standard. Salt is directly concatened to the hash. Thus, removing the possibility of using a rainbow table to retrieve the password from the hashes and ensures better security practices amongst developers. Also, you can make the hash function slower by adding more rounds, thus making the hashes less prone to brute-force attacks.
-- Never returned a single password, even if it's hashed and salted
-- Storing session as cookies. Web storage is prone to XSS attacks - which you can't eliminate 100% sure -, whereas cookies are only prone to CSRF which can be mitigated (only on modern browser; approximately 96%) by simply using sameSite="lax". For maximum prevention, you can use sameSite="strict" (GET requests initiated from other site won't include cookies, while "lax" will, so you must be sure your GET requests are safe) and ensures that untrusted content can't be hosted on your subdomains (e.g. pages.github.com).
-- Signing the cookie to make it non fungible. HMAC-SHA256/HS256 is used under the hood, though it's a symmetric signing scheme. Not optimal as you can't have third-parties veriyfing your token's signatures AND you can't rotate signing keys without redeploying which will also invalidate previous sessions. JWTs could have been used with RS256 (as cookie-parser only supports HS256).
-- Following OWASP recommendation for sesison ID length (>= 128 bits) and entropy (>= 64 bits)
+#### Bcrypt
+
+Bcrypt is an industry hash standard. Salt is directly concatened to the hash. Thus, removing the possibility of using a rainbow table to retrieve the password from the hashes and ensures better security practices amongst developers. Also, you can make the hash function slower by adding more rounds, thus making the hashes less prone to brute-force attacks.
+
+#### Storing sessions in cookies
+
+Bearing in mind XSS attacks can't be fully eliminated, Web Storage is not a proper place to store sessions as it is accessible by using JavaScript.
+Whereas, through the ages, many secure mechanism have been implemented to Cookies in order to mitigate attacks. The `HttpOnly` and `Secure` attributes make cookies protected against XSS and some MiTM attacks.
+Though, cookies are still prone to CSRF. We used to implement a csrf-token, stored in web storage (not prone to CSRF attacks). But nowadays this can be mitigated by simply using `sameSite="lax"` (only GET Requests initiated from other sites will include cookies), which is available to [approximately 96%](https://caniuse.com/mdn-http_headers_set-cookie_samesite_lax) users through modern web browsers.
+While GET Requests should never do anything, just return content, we can't be always sure it is the case. So, as another layer of protection, you can use `sameSite="strict"`. Therefore, cookies will never be included in request iniated from other sites. The only remaingin weakness, as a `site` is strictly different from an `origin`, is through untrusted content that can be hosted on your subdomains (e.g. pages.github.com).
+
+#### Session length and entropy
+
+As OWASP recommends, the session identifier length should be equal or greater than 128 bits and entropy should be equal or greater than 64 bits.
+Also a cryptographically secure pseudorandom number generator (CSPNG) should be used ([`randomBytes` is one](https://nodejs.org/api/crypto.html#cryptorandombytessize-callback)).
+
+#### Cookie signing
+
+Signing cookies make them non fungible. HMAC-SHA256/HS256 is used under the hood, it's a symmetric signing scheme which will be enough for our usecase. As I don't have other parties which would validate my cookie, using asymetrical signing schemes like RS256 would introduce a bit more complexity for not not much. JWTs could have been used with RS256 (as cookie-parser only supports HS256).
+
+Cookie signing really shines when you use token-based (stateless) authentication (see [Session-based (stateful) authentication](#session-based-stateful-authentication)), and when your token contains sensitive informations (role, permissions) as it ensures data integrity. However, it stills add a layer of security against collision attacks.
 
 ### Session-based (stateful) authentication
 
-Currently, the popular trend is to choose stateless authentication (e.g. token-based like JWTs).
-It clearly has its place in the industry (as detailed bellow). Still, I believe it should not be replacing traditionnal statefull (e.g. in database session-based) authentication.
+Currently, the popular trend is to choose stateless authentication (also missnamed "token-based authentication"), notably with JWTs.
+Stateless authentication clearly has its place in the industry (as detailed bellow). Still, I believe it should not be replacing traditionnal statefull authentication (meaning, the server keeps / controls the state of the sessions, e.g. by storing the sessions in a database).
 
-Stateless-based authentication has the benefits of self containing information and their validity (origin and expiry). Also, they are not tamperable. The benefits may seem to be, in the session context:
+Stateless-based authentication has the benefits of self containing information and their validity (origin and expiry). Also, they are not tamperable. The benefits may seem to be:
 
-1. No access to a database is required (faster)
-2. Easier to scale (using rsa, public keys for checking signature validity can be given, while only one service emits the tokens)
-3. Easier to implements
+1. No access to a database is required (meaning faster responses)
+2. Easier to scale in microservices (using RSA, public keys for checking signature validity can be given to some services, while only one service can emit the tokens using the private key)
+3. Easier to implements (do not require to store sessions in the backend)
 
-But those points can be misleading depending on what you're trying to achieve (especially user authentication):
+But those points can be misleading depending on what you're trying to achieve.
+Stateless means the server has no control over the session and its validity. With token-based, out of the box, only the TTL can be used to invalidate the token (purposely ignoring the signature part as it validate **every** tokens emitted).
 
-1. Being stateless means the server has no control over the session and its validity (actually, it's the very definition of _stateless_: the state does not exists anywhere). Only the TTL of the token can be used to ensure session validity (purposely ignoring the signature part as it only concerns token's origin).
+#### 1. No access to a database is required
 
-Implying, they can't be revoked (on password changed, logout or even worse: logging out an unknown session from an attacker) and they can contain stale data (e.g., when permissions are revoked), this is a major security concerns. The popular workaround is to implement a mechanism that will check against a database, and thus reimplementing statefulness (and high complexity) to your authentication.
+The previous statement implies tokens revocation can't be done immediately (after determined events), but needs to be predetermined.
 
-2. You're not Google (yet ?). You should not drive your architecture choice out of anticipation for something that may not arrive (but will surely add complexity and can lead to security flaws !).
+This is a major security concerns, it means that:
 
-3. They are not (see 1.). Also, you're limited by the length of your tokens (as cookies have a length limit), though you could divide your tokens in partionned cookies, resulting in increased requests size.
+- Changing a password or logging out, will **not** revoke previous sessions.
+- Logging out an unknown session (i.e. from an attacker) is not possible
+- The token can contains stale data (e.g. when permissions are revoked).
 
-However, as said in the beginning, stateless has usecases where it can still shines. This [blog post](http://cryto.net/%7Ejoepie91/blog/2016/06/13/stop-using-jwt-for-sessions/) sums it up as when the tokens are **short-lived**, **have only one use** or **the application still uses session**. Here are examples:
+  The popular workaround is to set a very low TTL and implement a mechanism that will check against a database the session validity (e.g. with a refresh token). Either way, this produces very complex code that is **reimplementing statefulness** to authentication. Which annihilates the initial goal of stateless authentitcation.
 
-- Microservices, as a one time password, between your services (but you might not need microservices: 2. You're not Google (yet ?)).
-- OTP, e.g. "verify account" or "change your password" emails, downloads.
+#### 2. Easier to scale with microservices
+
+You're not Google (yet ?).
+
+You should not drive your architecture choices out of anticipation for something that may not arrive (but will surely add complexity and can lead to security flaws !). Thoses architectures are not magical: solving the problems they target, comes with a tradeoff: _complexity_.
+
+#### 3. Easier to implements
+
+[As seen above](#1-no-access-to-a-database-is-required), security-wise, they are not.
+
+Also, you're limited by the length of your tokens (as cookies have a length limit and you need to put your whole session in the token in order to achieve stateless), though you could divide your tokens in partionned cookies, resulting in increased requests size (and some more complexity).
+
+#### Where stateless authentication really shines
+
+However, as said in the beginning, stateless has usecases where it can still shine. This [blogpost](http://cryto.net/%7Ejoepie91/blog/2016/06/13/stop-using-jwt-for-sessions/) sums it up as when the tokens are **short-lived**, **have only one use** or **the application still uses stateful authentication**. Here are examples:
+
+- Microservices, as a one time password between your services ([but you might not need microservices](#2-easier-to-scale-with-microservices)).
+- OTP, e.g. "verify account", "change your password" or downloads actions.
 - Where session security does not matter, but performance does: online video games with any important data.
-- SSO: as long as the user authentication is still based on statefull sessions (thus can be revoked), giving tokens to other servers is safe (backend/server can be trustable, wheras frontend/client can't be - by definition).
+- SSO: as long as the user authentication is still based on statefull sessions (thus can be revoked), giving tokens to other servers is safe (backend/server can be trusted, wheras frontend/client can't be, [by definition](https://blog.kuzzle.io/why-you-cant-secure-a-frontend-application)).
 
-As stated in a [redis blogpost](https://redis.io/blog/json-web-tokens-jwt-are-dangerous-for-user-sessions/), the less complex and fatest way (if performance is a concern) of handling authentication is just to use an in-memory database for session (e.g. Redis) instead of traditional databases (e.g. Postgres).
+As stated in a [redis blogpost](https://redis.io/blog/json-web-tokens-jwt-are-dangerous-for-user-sessions/), the less complex and fatest way (if performance is a concern) of handling session-based authentication is just to use an in-memory database for session (e.g. Redis) instead of traditional databases (e.g. Postgres).
 
-Considering it would not add more complexity compared to simply using Postgres: I decided to use Redis as my session datastore (in a decoupled way, as so, anything can be used as a datastore: memory, postgres, and so on.).
+> N.B. the blogpost, by its origin, as a large bias towards session-based authentication.
 
-## Prisma and Repository pattern
+Considering it would not add more complexity compared to simply using Postgres: I decided to use Redis as my session datastore (though, I decoupled it from my authentication module, thus making it change-proof).
 
-Currently using an ORM, especially prisma for the type safety it provides and for simplicity sake. Being aware of the performance issue ORMs can lead to (in-memory joins) I opted to use the _relationJoins_ preview features. However, I'm aware of the other ORMs limitations (especially the abstraction provided can lead to unnecessary complicated code when trying to achieve complex queries), thus raw sql queries in Prisma and prepared statements can be used in those cases (of course, they should be encapsulated in a layer of abstraction).
+### Email verification
+
+When I first wrote the email verification service, I did not required the user to be authenticated. So I naturally made the OTP non fungible.
+
+After some thought, I added the authentication guard on the "verify account" route, thereby making non fungibility useless (as session token already are).
+Also, for a better user experience it would have been nicer to use small alphanumeric writable codes (e.g. "B4D86M"). Thus, a user could use its smartphone to view the email, and manually enter the code on its computer.
+
+I left my code as so because I find the HS256 signing / validating process interesting.
+
+AWS SES and nodemailer are used to send the emails from a custom domain name (_hibooks.xyz_). It is behind an abstraction because it is a part of the code that can quickly mutate.
+
+## ORM
+
+### Prisma
+
+ORMs provide many benefits: Developer Experience, speed of development, [data abastraction](#repository-pattern). I chose Prisma for the type safety it provides. Being aware of the performance issue ORMs can lead to (in-memory joins) I opted to use [the `relationJoins` preview features](https://blog.kuzzle.io/why-you-cant-secure-a-frontend-application). However, I'm aware of the ORMs limitations:
+
+1. Unnecessary complicated code when trying to achieve complex queries (due to the level of abstraction)
+2. Ineffective and numerous queries for simple things
+3. Tightly coupled to the library, to its mainteners and to their choices
+
+Nevertheless, raw sql queries in Prisma and prepared statements can be used to mitigate `1.` and `2.` (of course, they should be encapsulated in a layer of abstraction). As for the third point, there is no evolution planned for this project.
+
+### Repository pattern
 
 Considering ORMs are already an abstraction over data persistence (except for raw sql queries), I don't see a need for the repository pattern. The only benefits would be to be able to switch from one ORM to the other (or no ORM). But I find it to be much overhead for so little gain for this project.
 
 ## Tests
 
-My approach to tests is feature-oriented.
+My approach to tests is feature-oriented. Instead of the pyramid of test, I refer to the test diamond.
 
-I strongly believe that, while developing a web application, the most important thing is to catch **features**-oriented bugs early. To do so, I find integration tests to have the best value/cost ratio, especially as we don't stub anything and test directly against a production-like infrastructure.
+I strongly believe that, while developing a web application, the most important thing is to catch **features**-oriented bugs early. To do so, I find functional tests to have the best value/cost ratio, especially as we don't stub anything and test directly against a production-like infrastructure whenever as possible (sometimes it's not or more convenient: mocking a smtp server to receive emails, mocking an external API).
 
-However, unit tests still have their importance. Mainly on critical **algorithm**-oriented functions (e.g. a freight charges calculator). While E2E are great for critical **user flows** (e.g. e-commerce payment).
+However, unit tests still have their importance. Mainly on critical **algorithm**-oriented functions (e.g. a freight charges calculator). While E2E are great for critical **user flows** (e.g. e-commerce cart and payment flow).
+
+> N.B. For convenience, I kept the Nest "E2E" wording. In this context, they are more related to functional tests. True E2E tests should be done against a frontend app / from a user perspective.
