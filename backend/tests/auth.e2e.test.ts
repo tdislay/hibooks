@@ -324,4 +324,21 @@ describe("Authentication (e2e)", () => {
       expect(otpShouldNotBeInRedis).toBeNull();
     });
   });
+
+  describe("Me", () => {
+    it("should return a 401 Unauthorized when not logged in", async () => {
+      await agent().get("/auth/me").expect(401);
+    });
+
+    it("should return the user session when logged in", async () => {
+      const sessionCookie = await authenticate(agent(), aliceCredentials);
+
+      await agent().get("/auth/me").set("Cookie", sessionCookie).expect(200, {
+        id: 1,
+        username: "alice",
+        email: "alice@gmail.com",
+        verified: true,
+      });
+    });
+  });
 });

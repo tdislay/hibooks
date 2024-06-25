@@ -12,6 +12,7 @@ import {
   UseGuards,
   UsePipes,
   NotFoundException,
+  Get,
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
@@ -59,6 +60,9 @@ export class AuthController {
     this.cookieOptions = configService.get("session.cookie", { infer: true });
   }
 
+  // **********************
+  // Unauthenticated routes
+  // **********************
   /**
    * Local authentification
    */
@@ -89,19 +93,6 @@ export class AuthController {
       maxAge: loginDto.rememberMe ? this.cookieOptions.maxAge : undefined,
     });
     return user;
-  }
-
-  @Post("logout")
-  @UseGuards(AuthenticatedGuard)
-  @HttpCode(200)
-  async logout(
-    @Req() request: Request,
-    @Res({ passthrough: true }) response: Response,
-  ): Promise<void> {
-    const sessionId = request.signedCookies[this.sessionCookieName] as string;
-    await this.authService.logout(sessionId);
-
-    response.clearCookie(this.sessionCookieName);
   }
 
   @Post("sign-up")
@@ -150,5 +141,26 @@ export class AuthController {
     }
   }
 
-  // In an entreprise context, a regenerate "VerifyAccountOTP" route should be added
+  // ********************
+  // Authenticated routes
+  // ********************
+  @Get("me")
+  @UseGuards(AuthenticatedGuard)
+  @HttpCode(200)
+  async me(@Req() request: Request): Promise<UserPasswordOmitted> {
+    return request.session as UserPasswordOmitted;
+  }
+
+  @Post("logout")
+  @UseGuards(AuthenticatedGuard)
+  @HttpCode(200)
+  async logout(
+    @Req() request: Request,
+    @Res({ passthrough: true }) response: Response,
+  ): Promise<void> {
+    const sessionId = request.signedCookies[this.sessionCookieName] as string;
+    await this.authService.logout(sessionId);
+
+    response.clearCookie(this.sessionCookieName);
+  }
 }
