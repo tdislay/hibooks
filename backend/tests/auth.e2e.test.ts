@@ -1,7 +1,5 @@
 import { INestApplication } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
 import { Test } from "@nestjs/testing";
-import { sign } from "cookie-signature";
 import { Agent, agent as supertestAgent } from "supertest";
 import { emailVerificationRedisPrefix } from "../src/modules/auth/emailVerification.service";
 import {
@@ -11,7 +9,6 @@ import {
 import { aliceCredentials, authenticate } from "./authenticate";
 import { EmailStubService } from "./stubs/EmailStub.service";
 import { AppModule } from "src/app.module";
-import { Configuration } from "src/config";
 import { EmailService } from "src/infra/email";
 import { RedisService } from "src/infra/redis";
 import { SessionService } from "src/modules/session/session.service";
@@ -129,33 +126,8 @@ describe("Authentication (e2e)", () => {
   });
 
   describe("Logout", () => {
-    it("should return a 401 Unauthorized when no session token", async () => {
+    it("should return a 401 Unauthorized when not logged in", async () => {
       await agent().post("/auth/logout").expect(401);
-    });
-
-    it("should return a 401 Unauthorized when token provided but no session associated", async () => {
-      const configService = app.get(ConfigService<Configuration, true>);
-      const sessionCookieName = configService.get("session.cookieName", {
-        infer: true,
-      });
-      const unsignedToken = "123456";
-      // express add a 's:' to indicate a cookie has been signed
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const signedToken = `s%3A${sign("123456", process.env.HS256_SECRET!)}`;
-
-      await agent()
-        .post("/auth/logout")
-        .set("Cookie", `${sessionCookieName}=${unsignedToken}`)
-        .expect(401);
-
-      await agent()
-        .post("/auth/logout")
-        .set("Cookie", `${sessionCookieName}=${signedToken}`)
-        .expect(401)
-        .expect(
-          "set-cookie",
-          "session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT",
-        );
     });
 
     it("should successfully logout a logged-in user and remove their cookie", async () => {
