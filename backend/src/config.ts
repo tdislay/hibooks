@@ -7,6 +7,7 @@ import { z } from "zod";
 const config = z.object({
   // Optionals
   PORT: z.number().min(1!).max(65535).default(3000),
+  SESSION_TEMP_EXPIRATION: z.number().default(60 * 60 * 24), // 24 hours
   SESSION_EXPIRATION: z.number().default(60 * 60 * 24 * 30), // 30 days
   SESSION_PREFIX: z.string().min(3).default("session"),
   SESSION_COOKIE_NAME: z.string().min(3).default("session"),
@@ -40,6 +41,7 @@ export function configuration() {
       password: env.REDIS_PASSWORD,
     },
     session: {
+      tempExpirationInSeconds: env.SESSION_TEMP_EXPIRATION,
       expirationInSeconds: env.SESSION_EXPIRATION,
       prefix: env.SESSION_PREFIX,
       cookie: {

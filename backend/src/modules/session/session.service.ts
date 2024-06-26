@@ -4,13 +4,11 @@ import { RedisService } from "../../infra/redis";
 import { SessionContent } from "./session";
 import { Configuration } from "src/config";
 
-// When remember me is false set the session ttl to 24h
-const tempSessionExpirationInSeconds = 24 * 60 * 60;
-
 @Injectable()
 export class SessionService {
   private sessionPrefix: string;
   private sessionExpirationInSeconds: number;
+  private tempSessionExpirationInSeconds: number;
 
   constructor(
     private redisService: RedisService,
@@ -20,6 +18,7 @@ export class SessionService {
 
     this.sessionPrefix = sessionConfig.prefix;
     this.sessionExpirationInSeconds = sessionConfig.expirationInSeconds;
+    this.tempSessionExpirationInSeconds = sessionConfig.tempExpirationInSeconds;
   }
 
   async set(
@@ -33,7 +32,7 @@ export class SessionService {
       "EX",
       rememberMe
         ? this.sessionExpirationInSeconds
-        : tempSessionExpirationInSeconds,
+        : this.tempSessionExpirationInSeconds,
     );
   }
 
