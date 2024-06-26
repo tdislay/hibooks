@@ -78,10 +78,7 @@
     "testRegex": ".*\\.test\\.ts$",
     "transform": {
       "^.+\\.(t|j)s$": [
-        "ts-jest",
-        {
-          "tsconfig": "tsconfig.test.json"
-        }
+        "ts-jest"
       ]
     },
     "collectCoverageFrom": [
