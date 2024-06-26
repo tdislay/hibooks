@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { ReactElement, ReactNode } from "react";
-import Providers from "./Providers";
-import "./globals.css";
+import Navbar from "./Navbar";
 
 export const metadata: Metadata = {
   title: "Hibooks",
@@ -14,10 +13,9 @@ export default function RootLayout({
   children: ReactNode;
 }): ReactElement {
   return (
-    <html lang="en">
-      <body>
-        <Providers>{children}</Providers>
-      </body>
-    </html>
+    <>
+      <Navbar />
+      {children}
+    </>
   );
 }
