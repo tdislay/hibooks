@@ -1,4 +1,5 @@
 import { INestApplication } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import { Test } from "@nestjs/testing";
 import { Agent, agent as supertestAgent } from "supertest";
 import { emailVerificationRedisPrefix } from "../src/modules/auth/emailVerification.service";
@@ -117,11 +118,16 @@ describe("Authentication (e2e)", () => {
     });
 
     it("should succesfully set a long-lived cookie on right credentials", async () => {
+      const configService = app.get(ConfigService);
+      const maxAge = configService.get("session.cookie.maxAge", {
+        infer: true,
+      });
+
       await agent()
         .post("/auth/login")
         .send({ ...aliceCredentials, rememberMe: true })
         .expect(200)
-        .expect("set-cookie", /Max-Age/);
+        .expect("set-cookie", new RegExp(`Max-Age=${maxAge}`));
     });
   });
 

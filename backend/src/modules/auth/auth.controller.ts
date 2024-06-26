@@ -2,21 +2,21 @@ import {
   Body,
   ConflictException,
   Controller,
+  Get,
   HttpCode,
   HttpException,
   HttpStatus,
   InternalServerErrorException,
+  NotFoundException,
   Post,
   Req,
   Res,
   UseGuards,
   UsePipes,
-  NotFoundException,
-  Get,
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
-import { CookieOptions, Request, Response } from "express";
+import { Request, Response } from "express";
 import { z } from "zod";
 import { UserPasswordOmitted } from "../users/users.service";
 import { AuthService } from "./auth.service";
@@ -48,7 +48,7 @@ const verifyAccountSchema = z.object({
 @Controller("auth")
 export class AuthController {
   private sessionCookieName: string;
-  private cookieOptions: CookieOptions;
+  private cookieOptions: Configuration["session"]["cookie"];
 
   constructor(
     private authService: AuthService,
@@ -90,7 +90,13 @@ export class AuthController {
 
     response.cookie(this.sessionCookieName, sessionToken, {
       ...this.cookieOptions,
-      maxAge: loginDto.rememberMe ? this.cookieOptions.maxAge : undefined,
+      maxAge: loginDto.rememberMe
+        ? // ? express requires maxAge in milliseconds.
+          // ? Against the RFC6265 (https://httpwg.org/specs/rfc6265.html#sane-max-age)
+          // ? All of this misleading decisions, while in the end, it will be converted to seconds (https://github.com/expressjs/express/blob/master/lib/response.js#L884)
+          this.cookieOptions.maxAge * 1000
+        : // undefined = session-lived cookie
+          undefined,
     });
     return user;
   }
