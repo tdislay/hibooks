@@ -103,7 +103,7 @@ describe("Authentication (e2e)", () => {
 
       const setCookieHeader = response.headers["set-cookie"] as string | null;
       const sessionCookie = setCookieHeader?.[0] as string;
-      const session = sessionCookie.match(/(?<=s%3A)\w*/)?.[0] as string;
+      const session = sessionCookie.match(/(?<=s%3A).*(?=\.)/)?.[0] as string;
       const redisSession = await sessionService.get(session);
 
       expect(sessionCookie).not.toMatch(/Max-Age/); // Session-lived Cookie
