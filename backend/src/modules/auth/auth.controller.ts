@@ -18,32 +18,35 @@ import { ConfigService } from "@nestjs/config";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 import { Request, Response } from "express";
 import { z } from "zod";
-import { UserPasswordOmitted } from "../users/users.service";
+import { UserPrivate } from "../users/types";
 import { AuthService } from "./auth.service";
 import { AuthenticatedGuard } from "./guards/Authenticated";
 import { UnauthenticatedGuard } from "./guards/Unauthenticated";
 import { Configuration } from "src/config";
 import { ZodValidationPipe } from "src/infra/zod";
 
-export type LoginDto = z.infer<typeof loginSchema>;
-export type SignInDto = z.infer<typeof signInSchema>;
-export type VerifyAccountDto = z.infer<typeof verifyAccountSchema>;
-
-const loginSchema = z.object({
+export const loginSchema = z.object({
   username: z.string().min(1),
   password: z.string().min(1),
   rememberMe: z.boolean().default(false).optional(),
 });
+export type LoginDto = z.infer<typeof loginSchema>;
 
-const signInSchema = z.object({
+export const signInSchema = z.object({
   email: z.string().email(),
   username: z.string().min(3).max(32).trim(),
   password: z.string().min(7),
 });
+export type SignInDto = z.infer<typeof signInSchema>;
 
-const verifyAccountSchema = z.object({
+export const verifyAccountSchema = z.object({
   otp: z.string().regex(/[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+/g, "Malformed OTP"),
 });
+export type VerifyAccountDto = z.infer<typeof verifyAccountSchema>;
+
+export type MeDto = undefined;
+
+export type LogoutDto = undefined;
 
 @Controller("auth")
 export class AuthController {
@@ -73,7 +76,7 @@ export class AuthController {
   async login(
     @Body() loginDto: Required<LoginDto>,
     @Res({ passthrough: true }) response: Response,
-  ): Promise<UserPasswordOmitted> {
+  ): Promise<UserPrivate> {
     const { user, sessionToken } = await this.authService.login(
       loginDto.username,
       loginDto.password,
@@ -107,7 +110,7 @@ export class AuthController {
   async signIn(
     @Body() signInDto: SignInDto,
     @Res({ passthrough: true }) response: Response,
-  ): Promise<UserPasswordOmitted> {
+  ): Promise<UserPrivate> {
     try {
       const { user, sessionToken } = await this.authService.signIn(signInDto);
 
@@ -136,7 +139,7 @@ export class AuthController {
     @Body() body: VerifyAccountDto,
     @Req() request: Request,
   ): Promise<void> {
-    const userId = (request.session as UserPasswordOmitted).id;
+    const userId = (request.session as UserPrivate).id;
     const hasBeenVerified = await this.authService.verifyUserAccount(
       userId,
       body.otp,
@@ -153,8 +156,8 @@ export class AuthController {
   @Get("me")
   @UseGuards(AuthenticatedGuard)
   @HttpCode(200)
-  async me(@Req() request: Request): Promise<UserPasswordOmitted> {
-    return request.session as UserPasswordOmitted;
+  async me(@Req() request: Request): Promise<UserPrivate> {
+    return request.session as UserPrivate;
   }
 
   @Post("logout")

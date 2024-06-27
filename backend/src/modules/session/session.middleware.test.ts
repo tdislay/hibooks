@@ -4,7 +4,7 @@ import { Test } from "@nestjs/testing";
 import { sign } from "cookie-signature";
 import { Request } from "express";
 import { Agent, agent as supertestAgent } from "supertest";
-import { UserPasswordOmitted } from "../users/users.service";
+import { UserPrivate } from "../users/types";
 import { AppModule } from "src/app.module";
 import { Configuration } from "src/config";
 import { setupApp } from "src/setup";
@@ -13,7 +13,7 @@ import { aliceCredentials, authenticate } from "tests/authenticate";
 @Controller("/fake-controller")
 class FakeController {
   @Get()
-  get(@Req() request: Request): UserPasswordOmitted | null {
+  get(@Req() request: Request): UserPrivate | null {
     return request.session; // Nest coerces null as empty object
   }
 }

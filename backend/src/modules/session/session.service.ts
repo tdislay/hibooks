@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { RedisService } from "../../infra/redis";
-import { SessionContent } from "./session";
+import { SessionContent } from "./types";
 import { Configuration } from "src/config";
 
 @Injectable()

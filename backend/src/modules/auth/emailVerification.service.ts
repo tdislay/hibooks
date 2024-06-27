@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { UserPasswordOmitted } from "../users/users.service";
+import { UserPrivate } from "../users/types";
 import { isSignedTokenValid, secureIdGenerator, signHS256 } from "./utils";
 import { Configuration } from "src/config";
 import { EmailContent, EmailService } from "src/infra/email";
@@ -29,7 +29,7 @@ export class EmailVerificationService {
    * The OTP id/userId are stored in redis with a low ttl.
    * @param sessionId
    */
-  async sendVerificationEmail(user: UserPasswordOmitted): Promise<void> {
+  async sendVerificationEmail(user: UserPrivate): Promise<void> {
     const frontendUrl = this.configService.get("frontend.url", { infer: true });
 
     const oneTimePasswordId = secureIdGenerator();

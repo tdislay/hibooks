@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "author": "Théo Dislay",
   "private": true,
+  "types": "./types.ts",
   "scripts": {
     "dev": "docker compose up",
     "build": "nest build",

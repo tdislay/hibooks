@@ -1,6 +1,7 @@
 import { Test } from "@nestjs/testing";
 import { User } from "@prisma/client";
-import { UserPasswordOmitted, UsersService } from "./users.service";
+import { UserPrivate } from "./types";
+import { UsersService } from "./users.service";
 import { PrismaService } from "src/infra/prisma";
 
 describe("UserService", () => {
@@ -17,7 +18,7 @@ describe("UserService", () => {
   it("Should get user by username without including password", async () => {
     const user = await usersService.getByUsername("alice");
 
-    expect(user).toEqual<UserPasswordOmitted>({
+    expect(user).toEqual<UserPrivate>({
       id: 1,
       username: "alice",
       email: "alice@gmail.com",

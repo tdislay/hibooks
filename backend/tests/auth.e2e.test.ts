@@ -3,10 +3,8 @@ import { ConfigService } from "@nestjs/config";
 import { Test } from "@nestjs/testing";
 import { Agent, agent as supertestAgent } from "supertest";
 import { emailVerificationRedisPrefix } from "../src/modules/auth/emailVerification.service";
-import {
-  UserPasswordOmitted,
-  UsersService,
-} from "../src/modules/users/users.service";
+import { UserPrivate } from "../src/modules/users/types";
+import { UsersService } from "../src/modules/users/users.service";
 import { aliceCredentials, authenticate } from "./authenticate";
 import { EmailStubService } from "./stubs/EmailStub.service";
 import { AppModule } from "src/app.module";
@@ -97,7 +95,7 @@ describe("Authentication (e2e)", () => {
       const response = await agent()
         .post("/auth/login")
         .send(aliceCredentials)
-        .expectPartial<Partial<UserPasswordOmitted>>(200, {
+        .expectPartial<Partial<UserPrivate>>(200, {
           id: 1,
           username: "alice",
           email: "alice@gmail.com",
@@ -109,7 +107,7 @@ describe("Authentication (e2e)", () => {
       const redisSession = await sessionService.get(session);
 
       expect(sessionCookie).not.toMatch(/Max-Age/); // Session-lived Cookie
-      expect(redisSession).toMatchObject<Partial<UserPasswordOmitted>>({
+      expect(redisSession).toMatchObject<Partial<UserPrivate>>({
         email: "alice@gmail.com",
         id: 1,
         username: "alice",
@@ -318,7 +316,7 @@ describe("Authentication (e2e)", () => {
         .expect(200);
 
       const user = await userService.getById(userId);
-      expect(user).toMatchObject<Partial<UserPasswordOmitted>>({
+      expect(user).toMatchObject<Partial<UserPrivate>>({
         username: "franklin",
         email: "franklin@gmail.com",
         verified: true,

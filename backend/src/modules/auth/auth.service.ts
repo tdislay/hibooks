@@ -1,11 +1,8 @@
 import { Injectable } from "@nestjs/common";
 import { compare } from "bcryptjs";
 import { SessionService } from "../session/session.service";
-import {
-  CreateUserDto,
-  UserPasswordOmitted,
-  UsersService,
-} from "../users/users.service";
+import { CreateUserDto, UserPrivate } from "../users/types";
+import { UsersService } from "../users/users.service";
 import { EmailVerificationService } from "./emailVerification.service";
 import { secureIdGenerator } from "./utils";
 
@@ -22,7 +19,7 @@ export class AuthService {
     password: string,
     rememberMe: boolean,
   ): Promise<{
-    user: UserPasswordOmitted | null;
+    user: UserPrivate | null;
     sessionToken: string | null;
   }> {
     const user = await this.usersService.getByUsername(username, true);
@@ -53,7 +50,7 @@ export class AuthService {
 
   async signIn(
     userDto: CreateUserDto,
-  ): Promise<{ user: UserPasswordOmitted; sessionToken: string }> {
+  ): Promise<{ user: UserPrivate; sessionToken: string }> {
     const user = await this.usersService.create(userDto);
 
     await this.emailVerificationService.sendVerificationEmail(user);
