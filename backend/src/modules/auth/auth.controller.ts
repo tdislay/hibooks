@@ -17,36 +17,25 @@ import {
 import { ConfigService } from "@nestjs/config";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 import { Request, Response } from "express";
-import { z } from "zod";
 import { UserPrivate } from "../users/types";
 import { AuthService } from "./auth.service";
 import { AuthenticatedGuard } from "./guards/Authenticated";
 import { UnauthenticatedGuard } from "./guards/Unauthenticated";
+import {
+  LoginRequest,
+  LoginResponse,
+  LogoutResponse,
+  MeResponse,
+  SignUpRequest,
+  SignUpResponse,
+  VerifyAccountRequest,
+  VerifyAccountResponse,
+  loginSchema,
+  signUpSchema,
+  verifyAccountSchema,
+} from "./types";
 import { Configuration } from "src/config";
 import { ZodValidationPipe } from "src/infra/zod";
-
-export const loginSchema = z.object({
-  username: z.string().min(1),
-  password: z.string().min(1),
-  rememberMe: z.boolean().default(false).optional(),
-});
-export type LoginDto = z.infer<typeof loginSchema>;
-
-export const signInSchema = z.object({
-  email: z.string().email(),
-  username: z.string().min(3).max(32).trim(),
-  password: z.string().min(7),
-});
-export type SignInDto = z.infer<typeof signInSchema>;
-
-export const verifyAccountSchema = z.object({
-  otp: z.string().regex(/[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+/g, "Malformed OTP"),
-});
-export type VerifyAccountDto = z.infer<typeof verifyAccountSchema>;
-
-export type MeDto = undefined;
-
-export type LogoutDto = undefined;
 
 @Controller("auth")
 export class AuthController {
@@ -74,13 +63,13 @@ export class AuthController {
   @UsePipes(new ZodValidationPipe(loginSchema))
   @HttpCode(200)
   async login(
-    @Body() loginDto: Required<LoginDto>,
+    @Body() body: Required<LoginRequest>,
     @Res({ passthrough: true }) response: Response,
-  ): Promise<UserPrivate> {
+  ): Promise<LoginResponse> {
     const { user, sessionToken } = await this.authService.login(
-      loginDto.username,
-      loginDto.password,
-      loginDto.rememberMe,
+      body.username,
+      body.password,
+      body.rememberMe,
     );
 
     if (user === null) {
@@ -93,7 +82,7 @@ export class AuthController {
 
     response.cookie(this.sessionCookieName, sessionToken, {
       ...this.cookieOptions,
-      maxAge: loginDto.rememberMe
+      maxAge: body.rememberMe
         ? // ? express requires maxAge in milliseconds.
           // ? Against the RFC6265 (https://httpwg.org/specs/rfc6265.html#sane-max-age)
           // ? All of this misleading decisions, while in the end, it will be converted to seconds (https://github.com/expressjs/express/blob/master/lib/response.js#L884)
@@ -106,13 +95,13 @@ export class AuthController {
 
   @Post("sign-up")
   @UseGuards(UnauthenticatedGuard)
-  @UsePipes(new ZodValidationPipe(signInSchema))
-  async signIn(
-    @Body() signInDto: SignInDto,
+  @UsePipes(new ZodValidationPipe(signUpSchema))
+  async signUp(
+    @Body() body: SignUpRequest,
     @Res({ passthrough: true }) response: Response,
-  ): Promise<UserPrivate> {
+  ): Promise<SignUpResponse> {
     try {
-      const { user, sessionToken } = await this.authService.signIn(signInDto);
+      const { user, sessionToken } = await this.authService.signUp(body);
 
       response.cookie(this.sessionCookieName, sessionToken, this.cookieOptions);
 
@@ -136,9 +125,9 @@ export class AuthController {
   @UsePipes(new ZodValidationPipe(verifyAccountSchema))
   @HttpCode(200)
   async verifyAccount(
-    @Body() body: VerifyAccountDto,
+    @Body() body: VerifyAccountRequest,
     @Req() request: Request,
-  ): Promise<void> {
+  ): Promise<VerifyAccountResponse> {
     const userId = (request.session as UserPrivate).id;
     const hasBeenVerified = await this.authService.verifyUserAccount(
       userId,
@@ -156,7 +145,7 @@ export class AuthController {
   @Get("me")
   @UseGuards(AuthenticatedGuard)
   @HttpCode(200)
-  async me(@Req() request: Request): Promise<UserPrivate> {
+  async me(@Req() request: Request): Promise<MeResponse> {
     return request.session as UserPrivate;
   }
 
@@ -166,7 +155,7 @@ export class AuthController {
   async logout(
     @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
-  ): Promise<void> {
+  ): Promise<LogoutResponse> {
     const sessionId = request.signedCookies[this.sessionCookieName] as string;
     await this.authService.logout(sessionId);
 

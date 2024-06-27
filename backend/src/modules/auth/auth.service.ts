@@ -48,7 +48,7 @@ export class AuthService {
     await this.sessionService.destroy(sessionId);
   }
 
-  async signIn(
+  async signUp(
     userDto: CreateUserDto,
   ): Promise<{ user: UserPrivate; sessionToken: string }> {
     const user = await this.usersService.create(userDto);

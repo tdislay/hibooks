@@ -1,8 +1,8 @@
 import { Test } from "supertest";
 import TestAgent from "supertest/lib/agent";
-import { LoginDto } from "src/modules/auth/auth.controller";
+import { LoginRequest } from "src/modules/auth/types";
 
-export const aliceCredentials: LoginDto = {
+export const aliceCredentials: LoginRequest = {
   username: "alice",
   password: "password",
 };
@@ -15,7 +15,7 @@ export const aliceCredentials: LoginDto = {
  */
 export async function authenticate(
   agent: TestAgent<Test>,
-  userCredentials: LoginDto,
+  userCredentials: LoginRequest,
 ): Promise<string> {
   const response = await agent.post("/auth/login").send(userCredentials);
 

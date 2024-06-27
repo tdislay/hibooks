@@ -45,9 +45,9 @@ export class UsersService {
     });
   }
 
-  async create(userDto: CreateUserDto): Promise<UserPrivate> {
+  async create(createUserDto: CreateUserDto): Promise<UserPrivate> {
     return this.prisma.user.create({
-      data: { ...userDto },
+      data: { ...createUserDto },
       select: excludePasswordField,
     });
   }

@@ -1,2 +1,13 @@
-export { LoginDto, SignInDto, VerifyAccountDto } from "./auth/types";
-export { UserPrivate, UserPrivate as UserPublic } from "./users/types";
+export {
+  LoginRequest,
+  LoginResponse,
+  SignUpRequest,
+  SignUpResponse,
+  VerifyAccountRequest,
+  VerifyAccountResponse,
+  MeRequest,
+  MeResponse,
+  LogoutRequest,
+  LogoutResponse,
+} from "./auth/types";
+export { UserPrivate, UserPublic } from "./users/types";
