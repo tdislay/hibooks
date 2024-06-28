@@ -30,9 +30,9 @@ export type VerifyAccountRequest = z.infer<typeof verifyAccountSchema>;
 export type VerifyAccountResponse = void;
 
 // Me
-export type MeRequest = void;
+export type MeRequest = Record<string, never>;
 export type MeResponse = UserPrivate;
 
 // Logout
-export type LogoutRequest = void;
+export type LogoutRequest = Record<string, never>;
 export type LogoutResponse = void;
