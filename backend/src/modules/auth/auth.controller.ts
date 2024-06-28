@@ -19,6 +19,11 @@ import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 import { Request, Response } from "express";
 import { UserPrivate } from "../users/types";
 import { AuthService } from "./auth.service";
+import {
+  loginSchema,
+  signUpSchema,
+  verifyAccountSchema,
+} from "./auth.validators";
 import { AuthenticatedGuard } from "./guards/Authenticated";
 import { UnauthenticatedGuard } from "./guards/Unauthenticated";
 import {
@@ -30,9 +35,6 @@ import {
   SignUpResponse,
   VerifyAccountRequest,
   VerifyAccountResponse,
-  loginSchema,
-  signUpSchema,
-  verifyAccountSchema,
 } from "./types";
 import { Configuration } from "src/config";
 import { ZodValidationPipe } from "src/infra/zod";
