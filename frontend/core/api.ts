@@ -21,22 +21,15 @@ async function request<Res>(
   path: string,
   init: RequestInit = {},
 ): Promise<ApiResponse<Res>> {
+  let response: Response;
   try {
     const url = getUrl(path);
 
-    const response = await fetch(url, {
+    response = await fetch(url, {
       method,
       credentials: "include",
       ...init,
     });
-
-    const body = (await response.json()) as Res | ApiError;
-
-    if (!response.ok) {
-      return { result: null, error: body as ApiError };
-    }
-
-    return { result: body as Res, error: null };
   } catch (error) {
     // TODO: Send a Toast error
     console.error(error);
@@ -46,6 +39,19 @@ async function request<Res>(
       result: null,
       error: { message, statusCode: -1 },
     };
+  }
+
+  try {
+    const body = (await response.json()) as Res | ApiError;
+
+    if (!response.ok) {
+      return { result: null, error: body as ApiError };
+    }
+
+    return { result: body as Res, error: null };
+  } catch {
+    // Can't parse json, then body is empty
+    return { result: {} as Res, error: null };
   }
 }
 

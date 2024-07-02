@@ -36,6 +36,16 @@ describe("Api", () => {
         } as Response);
       }
 
+      if (input.toString().includes("no-body")) {
+        return Promise.resolve({
+          status: 200,
+          ok: true,
+          json: () => {
+            throw new Error();
+          },
+        });
+      }
+
       return Promise.resolve({
         status: 200,
         ok: true,
@@ -143,8 +153,15 @@ describe("Api", () => {
       });
     });
 
-    it("should successfully return a response", async () => {
-      const { result, error } = await api.get("/my-endpoint");
+    it("should successfully return null on response without a body", async () => {
+      const { result, error } = await api.get<never, unknown>("/no-body");
+
+      expect(error).toBeNull();
+      expect(result).toMatchObject({});
+    });
+
+    it("should successfully return data on response with a body", async () => {
+      const { result, error } = await api.get("/body");
 
       expect(error).toBeNull();
       expect(result).toEqual({ data: "test" });
