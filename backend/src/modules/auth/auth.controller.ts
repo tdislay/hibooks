@@ -69,7 +69,7 @@ export class AuthController {
     @Body() body: Required<LoginRequest>,
     @Res({ passthrough: true }) response: Response,
   ): Promise<LoginResponse> {
-    const { user, sessionToken } = await this.authService.login(
+    const { user, sessionId } = await this.authService.login(
       body.username,
       body.password,
       body.rememberMe,
@@ -79,11 +79,11 @@ export class AuthController {
       throw new HttpException("User not found", HttpStatus.UNAUTHORIZED);
     }
 
-    if (sessionToken === null) {
+    if (sessionId === null) {
       throw new HttpException("Wrong credentials", HttpStatus.UNAUTHORIZED);
     }
 
-    response.cookie(this.sessionCookieName, sessionToken, {
+    response.cookie(this.sessionCookieName, sessionId, {
       ...this.cookieOptions,
       maxAge: body.rememberMe
         ? // ? express requires maxAge in milliseconds.
@@ -104,9 +104,9 @@ export class AuthController {
     @Res({ passthrough: true }) response: Response,
   ): Promise<SignUpResponse> {
     try {
-      const { user, sessionToken } = await this.authService.signUp(body);
+      const { user, sessionId } = await this.authService.signUp(body);
 
-      response.cookie(this.sessionCookieName, sessionToken, this.cookieOptions);
+      response.cookie(this.sessionCookieName, sessionId, this.cookieOptions);
 
       return user;
     } catch (error) {
@@ -143,10 +143,10 @@ export class AuthController {
     @Body() body: VerifyAccountRequest,
     @Req() request: Request,
   ): Promise<VerifyAccountResponse> {
-    const userId = (request.session as UserPrivate).id;
     const hasBeenVerified = await this.authService.verifyUserAccount(
-      userId,
+      request.session as UserPrivate,
       body.otp,
+      request.sessionId as string,
     );
 
     if (!hasBeenVerified) {

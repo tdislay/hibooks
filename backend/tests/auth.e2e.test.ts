@@ -4,7 +4,6 @@ import { Test } from "@nestjs/testing";
 import { Agent, agent as supertestAgent } from "supertest";
 import { emailVerificationRedisPrefix } from "../src/modules/auth/emailVerification.service";
 import { UserPrivate } from "../src/modules/users/types";
-import { UsersService } from "../src/modules/users/users.service";
 import { EmailStubService } from "./stubs/EmailStub.service";
 import {
   aliceCredentials,
@@ -318,7 +317,6 @@ describe("Authentication (e2e)", () => {
 
     it("should successfully verify an account", async () => {
       const emailService: EmailStubService = app.get(EmailService);
-      const userService: UsersService = app.get(UsersService);
       const redisService = app.get(RedisService);
 
       const response = await agent()
@@ -329,7 +327,6 @@ describe("Authentication (e2e)", () => {
           email: "franklin@gmail.com",
         })
         .expectPartial(201, { verified: false });
-      const userId = response.body.id;
       const sessionCookie = getSessionCookieFromResponse(response);
 
       await agent()
@@ -351,7 +348,10 @@ describe("Authentication (e2e)", () => {
         .send({ otp })
         .expect(200);
 
-      const user = await userService.getById(userId);
+      const { body: user } = await agent()
+        .get("/auth/me")
+        .set("Cookie", sessionCookie)
+        .expect(200);
       expect(user).toMatchObject<Partial<UserPrivate>>({
         username: "franklin",
         email: "franklin@gmail.com",

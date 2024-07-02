@@ -23,6 +23,8 @@ export class SessionMiddleware implements NestMiddleware {
     next: NextFunction,
   ): Promise<void> {
     request.session = null;
+    request.sessionId = null;
+
     const sessionId: string | undefined =
       request.signedCookies[this.sessionCookieName];
     if (sessionId == null) {
@@ -38,6 +40,7 @@ export class SessionMiddleware implements NestMiddleware {
       return;
     }
 
+    request.sessionId = sessionId;
     request.session = session;
     next();
   }

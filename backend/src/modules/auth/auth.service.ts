@@ -4,7 +4,6 @@ import { SessionService } from "../session/session.service";
 import { CreateUserDto, UserPrivate } from "../users/types";
 import { UsersService } from "../users/users.service";
 import { EmailVerificationService } from "./emailVerification.service";
-import { secureIdGenerator } from "./utils";
 
 @Injectable()
 export class AuthService {
@@ -20,27 +19,26 @@ export class AuthService {
     rememberMe: boolean,
   ): Promise<{
     user: UserPrivate | null;
-    sessionToken: string | null;
+    sessionId: string | null;
   }> {
     const user = await this.usersService.getByUsername(username, true);
 
     if (!user) {
-      return { user: null, sessionToken: null };
+      return { user: null, sessionId: null };
     }
 
     const passwordMatches = await compare(password, user.password);
 
     if (!passwordMatches) {
-      return { user, sessionToken: null };
+      return { user, sessionId: null };
     }
 
     delete (user as { password?: string }).password;
-    const sessionToken = secureIdGenerator();
-    await this.sessionService.set(sessionToken, user, rememberMe);
+    const sessionId = await this.sessionService.set(user, rememberMe);
 
     return {
       user,
-      sessionToken,
+      sessionId,
     };
   }
 
@@ -50,14 +48,13 @@ export class AuthService {
 
   async signUp(
     userDto: CreateUserDto,
-  ): Promise<{ user: UserPrivate; sessionToken: string }> {
+  ): Promise<{ user: UserPrivate; sessionId: string }> {
     const password = await hash(userDto.password, 10);
     const user = await this.usersService.create({ ...userDto, password });
 
-    const sessionToken = secureIdGenerator();
-    await this.sessionService.set(sessionToken, user, true); // Remember the user
+    const sessionId = await this.sessionService.set(user, true); // Remember the user
 
-    return { user, sessionToken };
+    return { user, sessionId };
   }
 
   async sendVerificationEmail(user: UserPrivate): Promise<void> {
@@ -65,19 +62,22 @@ export class AuthService {
   }
 
   async verifyUserAccount(
-    userId: number,
+    user: UserPrivate,
     oneTimePassword: string,
+    sessionId: string,
   ): Promise<boolean> {
     const retrievedUserId =
       await this.emailVerificationService.getUserIdFromOneTimePassword(
         oneTimePassword,
       );
 
-    if (userId !== retrievedUserId) {
+    if (user.id !== retrievedUserId) {
       return false;
     }
 
-    await this.usersService.verifyUserAccount(userId);
+    await this.usersService.verifyUserAccount(user.id);
+    await this.sessionService.update(sessionId, { ...user, verified: true });
+
     return true;
   }
 }
