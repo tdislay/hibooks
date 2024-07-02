@@ -12,9 +12,9 @@ export function useRedirectIfUnauthenticated(): void {
 
   useEffect(() => {
     if (!user.isAuthenticated) {
-      void router.push(
+      router.push(
         `/auth/login?to=${pathname}${encodeURIComponent("?")}${searchParams}`,
       );
     }
-  }, [router, pathname, user]);
+  }, [router, pathname, searchParams, user]);
 }

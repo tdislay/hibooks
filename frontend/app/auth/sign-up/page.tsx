@@ -32,7 +32,7 @@ export default function SignUp(): ReactElement {
       return;
     }
 
-    router.push("/");
+    router.push("/auth/verify-account");
   }
 
   return (
@@ -59,7 +59,7 @@ export default function SignUp(): ReactElement {
           </Callout>
         )}
 
-        <Form>
+        <Form id="test">
           <Input
             value={email}
             onChange={setEmail}

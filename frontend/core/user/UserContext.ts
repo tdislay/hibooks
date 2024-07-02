@@ -15,13 +15,14 @@ type UserContext = {
   isAuthenticated: boolean;
   login: (body: LoginRequest) => Promise<{ error: ApiError | null }>;
   signUp: (body: SignUpRequest) => Promise<{ error: ApiError | null }>;
+  sendVerificationEmail: () => Promise<{ error: ApiError | null }>;
   verifyAccount: (otp: string) => Promise<{ error: ApiError | null }>;
   logout: () => Promise<{ error: ApiError | null }>;
 };
 
-// ! `{} as never`is a hack to make TS happy.
-// ! But the UserContext is a global context provided in the root layout.
-// ! So the UserContext will always be available.
+// ! `{} as never` is a hack to make TS happy.
+// ! But this context is a global context provided in the root layout.
+// ! So this context will always be available.
 export const UserContext = createContext<UserContext>({} as never);
 export const useUser = (): UserContext => useContext(UserContext);
 
@@ -65,6 +66,16 @@ export function useInitUserContext(
       return { error: null };
     },
 
+    async sendVerificationEmail() {
+      const { error } = await api.post("/auth/verification-email");
+
+      if (error !== null) {
+        return { error };
+      }
+
+      return { error: null };
+    },
+
     async verifyAccount(otp: string) {
       const { error } = await api.post("/auth/verify-account", { otp });
 
@@ -74,6 +85,7 @@ export function useInitUserContext(
 
       if (user !== null) {
         user.verified = true;
+        setUser(user);
       }
       return { error: null };
     },
