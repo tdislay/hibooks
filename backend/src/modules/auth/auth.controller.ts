@@ -2,6 +2,7 @@ import {
   Body,
   ConflictException,
   Controller,
+  ForbiddenException,
   Get,
   HttpCode,
   HttpException,
@@ -115,11 +116,23 @@ export class AuthController {
       ) {
         const notUniqueField = (error.meta as { target: string[] } | undefined)
           ?.target[0];
-        throw new ConflictException(`"${notUniqueField}" is not unique`);
+        throw new ConflictException(`"${notUniqueField}" already exists`);
       }
 
       throw new InternalServerErrorException();
     }
+  }
+
+  @Post("verification-email")
+  @UseGuards(AuthenticatedGuard)
+  @HttpCode(200)
+  async sendVerificationEmail(@Req() request: Request): Promise<void> {
+    const user = request.session as UserPrivate;
+    if (user.verified) {
+      throw new ForbiddenException();
+    }
+
+    await this.authService.sendVerificationEmail(user);
   }
 
   @Post("verify-account")

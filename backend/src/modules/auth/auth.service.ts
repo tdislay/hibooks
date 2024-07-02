@@ -54,12 +54,14 @@ export class AuthService {
     const password = await hash(userDto.password, 10);
     const user = await this.usersService.create({ ...userDto, password });
 
-    await this.emailVerificationService.sendVerificationEmail(user);
-
     const sessionToken = secureIdGenerator();
     await this.sessionService.set(sessionToken, user, true); // Remember the user
 
     return { user, sessionToken };
+  }
+
+  async sendVerificationEmail(user: UserPrivate): Promise<void> {
+    return this.emailVerificationService.sendVerificationEmail(user);
   }
 
   async verifyUserAccount(

@@ -42,7 +42,7 @@ export class EmailVerificationService {
 
     const signedOTP = signHS256(oneTimePasswordId, this.hs256Secret);
     const verifyAccountLink = new URL(
-      `/verify-account?otp=${signedOTP}`,
+      `/auth/verify-account?otp=${signedOTP}`,
       frontendUrl,
     );
 
@@ -73,7 +73,7 @@ export class EmailVerificationService {
       `${emailVerificationRedisPrefix}:${oneTimePassword}`,
     );
 
-    // Avoiding `Number(null) = 0`
+    // ? Avoiding `Number(null) = 0`
     if (userId === null) {
       return null;
     }

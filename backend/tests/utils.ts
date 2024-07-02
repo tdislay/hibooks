@@ -1,4 +1,4 @@
-import { Test } from "supertest";
+import { Response, Test } from "supertest";
 import TestAgent from "supertest/lib/agent";
 import { LoginRequest } from "src/modules/auth/types";
 
@@ -19,8 +19,12 @@ export async function authenticate(
 ): Promise<string> {
   const response = await agent.post("/auth/login").send(userCredentials);
 
+  return getSessionCookieFromResponse(response);
+}
+
+export function getSessionCookieFromResponse(response: Response): string {
   const setCookieHeader = response.headers["set-cookie"] as string | null;
-  const session = setCookieHeader?.[0];
+  const session = setCookieHeader?.[0] as string;
 
   expect(session).toMatch(/session=s%3A.*HttpOnly; Secure; SameSite=Lax/);
 

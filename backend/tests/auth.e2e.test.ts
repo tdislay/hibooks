@@ -5,11 +5,16 @@ import { Agent, agent as supertestAgent } from "supertest";
 import { emailVerificationRedisPrefix } from "../src/modules/auth/emailVerification.service";
 import { UserPrivate } from "../src/modules/users/types";
 import { UsersService } from "../src/modules/users/users.service";
-import { aliceCredentials, authenticate } from "./authenticate";
 import { EmailStubService } from "./stubs/EmailStub.service";
+import {
+  aliceCredentials,
+  authenticate,
+  getSessionCookieFromResponse,
+} from "./utils";
 import { AppModule } from "src/app.module";
 import { EmailService } from "src/infra/email";
 import { RedisService } from "src/infra/redis";
+import { signHS256 } from "src/modules/auth/utils";
 import { SessionService } from "src/modules/session/session.service";
 import { setupApp } from "src/setup";
 
@@ -35,7 +40,7 @@ describe("Authentication (e2e)", () => {
   });
 
   describe("Login", () => {
-    it("should return a 400 when bad parameters", async () => {
+    it("should return a 400 on bad parameters", async () => {
       // No parameters
       await agent()
         .post("/auth/login")
@@ -101,8 +106,7 @@ describe("Authentication (e2e)", () => {
           email: "alice@gmail.com",
         });
 
-      const setCookieHeader = response.headers["set-cookie"] as string | null;
-      const sessionCookie = setCookieHeader?.[0] as string;
+      const sessionCookie = getSessionCookieFromResponse(response);
       const session = sessionCookie.match(/(?<=s%3A).*(?=\.)/)?.[0] as string;
       const redisSession = await sessionService.get(session);
 
@@ -149,7 +153,7 @@ describe("Authentication (e2e)", () => {
   });
 
   describe("Sign up", () => {
-    it("should return a 400 when bad parameters", async () => {
+    it("should return a 400 on bad parameters", async () => {
       // No parameters
       await agent()
         .post("/auth/sign-up")
@@ -181,7 +185,7 @@ describe("Authentication (e2e)", () => {
           username: "alice",
           password: "password",
         })
-        .expectPartial(409, { message: '"username" is not unique' });
+        .expectPartial(409, { message: '"username" already exists' });
     });
 
     it("should successfully sign-up a new user and set a long-lived cookie", async () => {
@@ -210,7 +214,7 @@ describe("Authentication (e2e)", () => {
   });
 
   describe("Verify account", () => {
-    it("should return a 400 when bad parameters", async () => {
+    it("should return a 400 on bad parameters", async () => {
       const sessionCookie = await authenticate(agent(), aliceCredentials);
 
       // No parameters
@@ -251,19 +255,7 @@ describe("Authentication (e2e)", () => {
         .expectPartial(400, { cause: [{ message: "Malformed OTP" }] });
     });
 
-    it("should return a 404 not found when otp does not exist", async () => {
-      const sessionCookie = await authenticate(agent(), aliceCredentials);
-
-      await agent()
-        .post("/auth/verify-account")
-        .set("Cookie", sessionCookie)
-        .send({
-          otp: "content.signature",
-        })
-        .expect(404);
-    });
-
-    it("should return a 404 not found when otp is not valid", async () => {
+    it("should return a 404 Not Found when otp is not valid", async () => {
       const redisService = app.get(RedisService);
       const initOtpKeys = await redisService.keys(
         `${emailVerificationRedisPrefix}:*`,
@@ -274,22 +266,54 @@ describe("Authentication (e2e)", () => {
         password: "strongPa$$word",
         email: "victim@gmail.com",
       });
-      const setCookieHeader = response.headers["set-cookie"] as string | null;
-      const sessionCookie = setCookieHeader?.[0] as string;
+      const sessionCookie = getSessionCookieFromResponse(response);
+
+      await agent()
+        .post("/auth/verification-email")
+        .set("Cookie", sessionCookie)
+        .expect(200);
 
       const otpKeys = await redisService.keys(
         `${emailVerificationRedisPrefix}:*`,
       );
-      const otpKey = otpKeys.filter((key) => !initOtpKeys.includes(key))[0];
-      const otp = otpKey.split(":")[2];
-      expect(otp).toBeDefined();
+      const otp = otpKeys.filter((key) => !initOtpKeys.includes(key))[0];
+      const otpContent = otp.split(":")[2];
+      expect(otpContent).toBeDefined();
 
-      const tamperedOtp = `${otp}.wrong-signature`;
+      const tamperedOtp = signHS256(otpContent, "wrong-signature");
       await agent()
         .post("/auth/verify-account")
         .set("Cookie", sessionCookie)
         .send({ otp: tamperedOtp })
         .expect(404);
+    });
+
+    it("should return a 404 Not Found when valid otp does not exist / expired", async () => {
+      const configService = app.get(ConfigService);
+      const hs256Secret = configService.get("application.hs256Secret", {
+        infer: true,
+      });
+
+      const sessionCookie = await authenticate(agent(), aliceCredentials);
+      const otp = signHS256("expired-token", hs256Secret);
+
+      await agent()
+        .post("/auth/verify-account")
+        .set("Cookie", sessionCookie)
+        .send({ otp })
+        .expect(404);
+    });
+
+    it("should return a 401 Unauthorized when not logged in", async () => {
+      await agent().post("/auth/verification-email").expect(401);
+    });
+
+    it("should return a 403 Forbidden when account is already verified", async () => {
+      const sessionCookie = await authenticate(agent(), aliceCredentials);
+      await agent()
+        .post("/auth/verification-email")
+        .set("Cookie", sessionCookie)
+        .expect(403);
     });
 
     it("should successfully verify an account", async () => {
@@ -305,10 +329,14 @@ describe("Authentication (e2e)", () => {
           email: "franklin@gmail.com",
         })
         .expectPartial(201, { verified: false });
-
       const userId = response.body.id;
-      const setCookieHeader = response.headers["set-cookie"] as string | null;
-      const sessionCookie = setCookieHeader?.[0] as string;
+      const sessionCookie = getSessionCookieFromResponse(response);
+
+      await agent()
+        .post("/auth/verification-email")
+        .set("Cookie", sessionCookie)
+        .expect(200);
+
       const mail = emailService.inbox.get("franklin@gmail.com")?.[0];
       const otp = mail?.content.html?.match(/href=".*?otp=(.*)"/)?.[1];
       const otpShouldBeInRedis = await redisService.get(

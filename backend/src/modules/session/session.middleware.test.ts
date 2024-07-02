@@ -1,14 +1,14 @@
 import { Controller, Get, INestApplication, Req } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { Test } from "@nestjs/testing";
-import { sign } from "cookie-signature";
 import { Request } from "express";
 import { Agent, agent as supertestAgent } from "supertest";
+import { signHS256 } from "../auth/utils";
 import { UserPrivate } from "../users/types";
 import { AppModule } from "src/app.module";
 import { Configuration } from "src/config";
 import { setupApp } from "src/setup";
-import { aliceCredentials, authenticate } from "tests/authenticate";
+import { aliceCredentials, authenticate } from "tests/utils";
 
 @Controller("/fake-controller")
 class FakeController {
@@ -67,7 +67,7 @@ describe("SessionMiddleware", () => {
     const hs256Secret = configService.get("application.hs256Secret", {
       infer: true,
     });
-    const signedToken = `s%3A${sign("123456", hs256Secret)}`;
+    const signedToken = `s%3A${signHS256("123456", hs256Secret)}`;
     await agent()
       .get("/fake-controller")
       .set("Cookie", `${sessionCookieName}=${signedToken}`)
