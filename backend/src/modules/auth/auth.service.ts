@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { compare } from "bcryptjs";
+import { compare, hash } from "bcryptjs";
 import { SessionService } from "../session/session.service";
 import { CreateUserDto, UserPrivate } from "../users/types";
 import { UsersService } from "../users/users.service";
@@ -51,7 +51,8 @@ export class AuthService {
   async signUp(
     userDto: CreateUserDto,
   ): Promise<{ user: UserPrivate; sessionToken: string }> {
-    const user = await this.usersService.create(userDto);
+    const password = await hash(userDto.password, 10);
+    const user = await this.usersService.create({ ...userDto, password });
 
     await this.emailVerificationService.sendVerificationEmail(user);
 

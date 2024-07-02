@@ -198,6 +198,14 @@ describe("Authentication (e2e)", () => {
           verified: false,
         })
         .expect("set-cookie", /session=s%3A.*Max-Age/);
+
+      await agent()
+        .post("/auth/login")
+        .send({
+          username: "theo",
+          password: "mysuperpassword",
+        })
+        .expect(200);
     });
   });
 
