@@ -10,7 +10,7 @@ import {
 import { createContext, useContext, useState } from "react";
 import { ApiError, api } from "../api";
 
-type UserContext = {
+type UserState = {
   current: Readonly<UserPrivate | null>;
   isAuthenticated: boolean;
   login: (body: LoginRequest) => Promise<{ error: ApiError | null }>;
@@ -23,12 +23,10 @@ type UserContext = {
 // ! `{} as never` is a hack to make TS happy.
 // ! But this context is a global context provided in the root layout.
 // ! So this context will always be available.
-export const UserContext = createContext<UserContext>({} as never);
-export const useUser = (): UserContext => useContext(UserContext);
+export const UserContext = createContext<UserState>({} as never);
+export const useUser = (): UserState => useContext(UserContext);
 
-export function useInitUserContext(
-  userDefault: UserPrivate | null,
-): UserContext {
+export function useInitUserContext(userDefault: UserPrivate | null): UserState {
   const [user, setUser] = useState<UserPrivate | null>(userDefault);
 
   return {
