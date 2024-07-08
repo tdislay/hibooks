@@ -2,14 +2,14 @@ import { INestApplication } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { Test } from "@nestjs/testing";
 import { Agent, agent as supertestAgent } from "supertest";
-import { emailVerificationRedisPrefix } from "../src/modules/auth/emailVerification.service";
-import { UserPrivate } from "../src/modules/users/types";
-import { EmailStubService } from "./stubs/EmailStub.service";
+import { emailVerificationRedisPrefix } from "../../src/modules/auth/emailVerification.service";
+import { UserPrivate } from "../../src/modules/users/types";
+import { EmailStubService } from "../stubs/EmailStub.service";
 import {
   aliceCredentials,
   authenticate,
   getSessionCookieFromResponse,
-} from "./utils";
+} from "../utils";
 import { AppModule } from "src/app.module";
 import { EmailService } from "src/infra/email";
 import { RedisService } from "src/infra/redis";
@@ -17,7 +17,7 @@ import { signHS256 } from "src/modules/auth/utils";
 import { SessionService } from "src/modules/session/session.service";
 import { setupApp } from "src/setup";
 
-describe("Authentication (e2e)", () => {
+describe("Authentication", () => {
   let app: INestApplication;
   const agent = (): Agent => supertestAgent(app.getHttpServer());
 
