@@ -8,6 +8,7 @@
   ],
   "packageManager": "npm@10.8.1",
   "scripts": {
+    "services": "docker compose -f backend/docker-compose.yml up postgres redis -d",
     "dev": "FORCE_COLOR=1 turbo run dev",
     "test": "FORCE_COLOR=1 turbo run test",
     "format": "FORCE_COLOR=1 turbo run format",
