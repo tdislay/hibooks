@@ -10,10 +10,10 @@ type ApiResponse<Res> =
   | { result: Res; error: null }
   | { result: null; error: ApiError };
 
-const BASE_URL = "http://localhost:3000";
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
 function getUrl(path: string): URL {
-  return new URL(path, BASE_URL);
+  return new URL(path, BACKEND_URL);
 }
 
 async function request<Res>(

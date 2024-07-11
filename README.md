@@ -27,6 +27,7 @@ git clone git@github.com:tdislay/hibooks.git
 cd hibooks
 npm install
 cp ./backend/.env.example ./backend/.env
+cp ./frontend/.env.example ./frontend/.env.local
 npx -w backend prisma generate
 npx -w backend prisma db push
 npx -w backend prisma db seed
@@ -39,15 +40,18 @@ npm run dev
   - [x] **Homemade Local Authentication**
   - [x] Sign up user
   - [x] Email verification using one time password
-  - [ ] Sign up (check uniqueness with debounce) & login from frontend
+  - [x] Sign up & login from frontend
+  - [ ] Check username uniqueness with debounce
+  - [ ] Form Validation
   - [ ] Google **SSO**
 - [ ] CRUD Books
+- [ ] Preferences (follow series and authors)
 - [ ] **Real time Notifications (SSE)**
 - [ ] CRUD Users
   - [ ] Upload profile picture on AWS S3
   - [ ] GET User (retrieve only non sensitive information)
   - [ ] Backend password change
-- [ ] CRUD BookOpinions
+- [ ] CRUD BookOpinions (If account is verified)
 - [ ] **Efficient Book Search**
   - [ ] Open Search (data replication)
   - [ ] Search endpoint
