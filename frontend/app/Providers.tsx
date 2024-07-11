@@ -7,7 +7,7 @@
 
 import { UserPrivate } from "backend";
 import { ReactElement, ReactNode } from "react";
-import { UserContext, useInitUserContext } from "../core/user/UserContext";
+import { UserContext, useInitUserContext } from "../states/user";
 
 export default function Providers({
   children,

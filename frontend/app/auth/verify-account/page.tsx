@@ -9,8 +9,8 @@ import Button from "@/components/ui/Button";
 import Callout from "@/components/ui/Callout";
 import { Spinner } from "@/components/ui/Spinner";
 import { useRedirectIfUnauthenticated } from "@/core/guards/redirectIfUnauthenticated";
-import { useUser } from "@/core/user/UserContext";
 import verifyAccountBanner from "@/public/auth/verify-account-banner.jpg";
+import { useUser } from "@/states/user";
 
 export default function VerifyAccount(): ReactElement {
   const searchParams = useSearchParams();

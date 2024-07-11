@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect } from "react";
-import { useUser } from "../user/UserContext";
+import { useUser } from "../../states/user";
 
 export function useRedirectIfUnauthenticated(): void {
   const router = useRouter();

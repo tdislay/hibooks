@@ -4,8 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { ReactElement, useContext } from "react";
 import Button from "@/components/ui/Button";
-import { UserContext } from "@/core/user/UserContext";
 import owliverSvg from "@/public/owliver.svg";
+import { UserContext } from "@/states/user";
 
 export default function Navbar(): ReactElement {
   const { current: user, isAuthenticated, logout } = useContext(UserContext);

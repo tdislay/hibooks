@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ReactElement, useContext } from "react";
-import { UserContext } from "@/core/user/UserContext";
+import { UserContext } from "@/states/user";
 
 export default function Home(): ReactElement {
   const { current } = useContext(UserContext);

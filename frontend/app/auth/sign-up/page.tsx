@@ -9,9 +9,9 @@ import Form from "@/components/forms/Form";
 import Input from "@/components/forms/Input";
 import Button from "@/components/ui/Button";
 import Callout from "@/components/ui/Callout";
-import { useUser } from "@/core/user/UserContext";
 import signupBanner from "@/public/auth/signup-banner.jpg";
 import googleSvg from "@/public/sso/google.svg";
+import { useUser } from "@/states/user";
 import { formatApiErrorMessage } from "@/utils/formatApiErrorMessage";
 
 export default function SignUp(): ReactElement {

@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect } from "react";
-import { useUser } from "../user/UserContext";
+import { useUser } from "../../states/user";
 
 export function useRedirectIfAuthenticated(): void {
   const router = useRouter();

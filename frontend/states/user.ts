@@ -8,7 +8,7 @@ import {
   UserPrivate,
 } from "backend";
 import { createContext, useContext, useState } from "react";
-import { ApiError, api } from "../api";
+import { ApiError, api } from "../core/api";
 
 type UserState = {
   current: Readonly<UserPrivate | null>;
@@ -36,7 +36,7 @@ export function useInitUserContext(userDefault: UserPrivate | null): UserState {
       return user !== null;
     },
 
-    async login(body: LoginRequest) {
+    login: async (body: LoginRequest) => {
       const { result, error } = await api.post<LoginRequest, LoginResponse>(
         "/auth/login",
         body,

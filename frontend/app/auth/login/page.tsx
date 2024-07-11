@@ -11,9 +11,9 @@ import Form from "@/components/forms/Form";
 import Input from "@/components/forms/Input";
 import Callout from "@/components/ui/Callout";
 import { useRedirectIfAuthenticated } from "@/core/guards/redirectIfAuthenticated";
-import { useUser } from "@/core/user/UserContext";
 import loginBanner from "@/public/auth/login-banner.jpg";
 import googleSvg from "@/public/sso/google.svg";
+import { useUser } from "@/states/user";
 import { formatApiErrorMessage } from "@/utils/formatApiErrorMessage";
 
 export default function Login(): ReactElement {
