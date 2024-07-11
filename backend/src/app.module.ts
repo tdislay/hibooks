@@ -6,7 +6,7 @@ import { RedisModule } from "./infra/redis";
 import { AuthModule } from "./modules/auth/auth.module";
 import { SessionMiddleware } from "./modules/session/session.middleware";
 import { SessionModule } from "./modules/session/session.module";
-import { UserModule } from "./modules/users/users.module";
+import { UsersModule } from "./modules/users/users.module";
 
 @Module({
   imports: [
@@ -21,7 +21,7 @@ import { UserModule } from "./modules/users/users.module";
     // Modules
     AuthModule,
     SessionModule,
-    UserModule,
+    UsersModule,
   ],
 })
 export class AppModule implements NestModule {
