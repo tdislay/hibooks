@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { ReactElement, ReactNode } from "react";
 import Providers from "./Providers";
-import { retrieveUserFromSessionIfAny } from "@/core/user/retrieveUser";
+import { retrieveUserFromSessionIfAny } from "@/core/user";
 import "./globals.css";
 
 export const metadata: Metadata = {
