@@ -55,13 +55,23 @@ async function request<Res>(
   }
 }
 
-async function get<Req extends Record<string, string>, Res>(
+async function get<Req extends Record<string, string | number | boolean>, Res>(
   path: `/${string}`,
   query?: Req,
   init?: RequestInit,
 ): Promise<ApiResponse<Res>> {
+  const queryWithoutUndefineds: Record<string, string> = {};
+  for (const [key, value] of Object.entries(query ?? {})) {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (value !== undefined) {
+      queryWithoutUndefineds[key] = value as string; // URLSearchParams will convert numbers and booleans to string, either way
+    }
+  }
+
   const pathWithQueryIfPresent =
-    query != null ? `${path}?${new URLSearchParams(query).toString()}` : path;
+    query != null
+      ? `${path}?${new URLSearchParams(queryWithoutUndefineds).toString()}`
+      : path;
 
   return request("GET", pathWithQueryIfPresent, init);
 }

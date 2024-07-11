@@ -64,6 +64,18 @@ describe("Api", () => {
       );
     });
 
+    it("should successfully fetch with undefined query params", async () => {
+      await api.get("/my-endpoint", {
+        param1: undefined as never,
+        param2: "value2",
+      });
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        new URL("http://localhost:3000/my-endpoint?param2=value2"),
+        { method: "GET", credentials: "include" },
+      );
+    });
+
     it("should successfully fetch with query params", async () => {
       await api.get("/my-endpoint", { param1: "value1", param2: "value2" });
 
