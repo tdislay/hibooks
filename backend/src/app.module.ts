@@ -4,6 +4,7 @@ import { configuration } from "./config";
 import { PrismaModule } from "./infra/prisma";
 import { RedisModule } from "./infra/redis";
 import { AuthModule } from "./modules/auth/auth.module";
+import { BookModule } from "./modules/books/books.module";
 import { SessionMiddleware } from "./modules/session/session.middleware";
 import { SessionModule } from "./modules/session/session.module";
 import { UsersModule } from "./modules/users/users.module";
@@ -22,6 +23,7 @@ import { UsersModule } from "./modules/users/users.module";
     AuthModule,
     SessionModule,
     UsersModule,
+    BookModule,
   ],
 })
 export class AppModule implements NestModule {

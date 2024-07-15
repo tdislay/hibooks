@@ -1,10 +1,6 @@
 "use client";
 
-import {
-  ChangeEventHandler,
-  HTMLInputTypeAttribute,
-  ReactElement,
-} from "react";
+import { HTMLInputTypeAttribute, ReactElement } from "react";
 
 export default function Input({
   label,

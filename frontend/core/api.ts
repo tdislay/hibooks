@@ -6,7 +6,7 @@ export type ApiError = {
   cause?: ZodIssue[];
 };
 
-type ApiResponse<Res> =
+export type ApiResponse<Res> =
   | { result: Res; error: null }
   | { result: null; error: ApiError };
 

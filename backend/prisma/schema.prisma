@@ -15,3 +15,47 @@ model User {
   password String
   verified Boolean @default(false)
 }
+
+model Author {
+  id                    Int     @id @default(autoincrement())
+  firstname             String
+  lastname              String
+  description           String
+  authorPictureFilename String?
+  Book                  Book[]
+}
+
+model Genre {
+  id   Int    @id @default(autoincrement())
+  name String
+  Book Book[]
+}
+
+model Publisher {
+  id   Int    @id @default(autoincrement())
+  name String
+  Book Book[]
+}
+
+model Series {
+  id   Int    @id @default(autoincrement())
+  name String
+  Book Book[]
+}
+
+model Book {
+  id            Int       @id @default(autoincrement())
+  isbn13        String    @unique
+  title         String
+  parutionDate  DateTime
+  summary       String
+  pages         Int?
+  coverFilename String?
+  authors       Author[]
+  genre         Genre     @relation(fields: [genreId], references: [id])
+  genreId       Int
+  series        Series?   @relation(fields: [seriesId], references: [id])
+  seriesId      Int?
+  publisher     Publisher @relation(fields: [publisherId], references: [id])
+  publisherId   Int
+}
